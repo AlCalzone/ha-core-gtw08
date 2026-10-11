@@ -15,8 +15,10 @@ from homeassistant.components.climate import (
 )
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
+from .const import DOMAIN
 from .coordinator import Gtw08ConfigEntry, Gtw08RuntimeData
 from .entity import Gtw08Entity, Gtw08EntityDescription, zone_of
 
@@ -135,15 +137,24 @@ class Gtw08Climate(Gtw08Entity, ClimateEntity):
         """Set the manual temperature and the mode passed along with it.
 
         Without a mode, a scheduled zone switches to manual so it holds the
-        new temperature.
+        new temperature, and a zone that is off stays off.
         """
+        hvac_mode = kwargs.get(ATTR_HVAC_MODE)
+        # Check the mode before writing, so a refused call writes nothing.
+        # The manual temperature has no effect on a scheduled zone.
+        if hvac_mode is not None and hvac_mode not in (HVACMode.HEAT, HVACMode.OFF):
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="temperature_mode_unsupported",
+                translation_placeholders={"hvac_mode": str(hvac_mode)},
+            )
         zone = self._zone
         await self._async_write(
             zone.async_write_room_setpoint(kwargs[ATTR_TEMPERATURE])
         )
-        if (hvac_mode := kwargs.get(ATTR_HVAC_MODE)) is not None:
+        if hvac_mode is not None:
             await self._async_write(zone.async_write_mode(ZONE_MODES[hvac_mode]))
-        elif zone.mode is not ZoneMode.MANUAL:
+        elif zone.mode in (ZoneMode.SCHEDULING, ZoneMode.TEMPORARY):
             await self._async_write(zone.async_write_mode(ZoneMode.MANUAL))
 
     @override

@@ -61,7 +61,9 @@ rules:
   docs-supported-functions: done
   docs-troubleshooting: done
   docs-use-cases: done
-  dynamic-devices: done
+  dynamic-devices:
+    status: exempt
+    comment: Boards and zones are read when the entry loads. Only a zone the gateway was still fetching then is added later; a new board needs a reload.
   entity-category: done
   entity-device-class: done
   entity-disabled-by-default: done

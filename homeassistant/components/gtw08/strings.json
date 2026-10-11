@@ -550,8 +550,20 @@
     "no_component_answered": {
       "message": "The gateway answered none of the requests of this poll."
     },
+    "power_required": {
+      "message": "This mode needs a power."
+    },
+    "remote_control_not_ready": {
+      "message": "The gateway behind {title} has not answered for remote control yet. Try again in a minute."
+    },
     "remote_control_unsupported": {
       "message": "{title} does not support remote control of the heat demand."
+    },
+    "temperature_mode_unsupported": {
+      "message": "A temperature can only be set together with heat or off, not with {hvac_mode}."
+    },
+    "temperature_required": {
+      "message": "This mode needs a temperature."
     },
     "write_failed": {
       "message": "Writing to the appliance failed: {error}"

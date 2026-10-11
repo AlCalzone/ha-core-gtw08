@@ -392,3 +392,23 @@ def test_rtu_over_tcp_to_an_ipv6_host() -> None:
         }
     )
     assert params == ModbusSerialParams(device="socket://[fd00::60]:8899")
+
+
+@pytest.mark.usefixtures("mock_setup_entry", "mock_temporary_unit")
+async def test_reconfigure_onto_another_entrys_link(
+    hass: HomeAssistant, mock_config_entry: MockConfigEntry
+) -> None:
+    """Test reconfiguring onto the link and unit of another entry aborts."""
+    mock_config_entry.add_to_hass(hass)
+    other = MockConfigEntry(
+        domain=DOMAIN,
+        data={**MOCK_ENTRY_DATA, CONF_DEVICE: "/dev/ttyUSB1"},
+        title=MOCK_TITLE,
+    )
+    other.add_to_hass(hass)
+    result = await other.start_reconfigure_flow(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], SERIAL_INPUT
+    )
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "already_configured"

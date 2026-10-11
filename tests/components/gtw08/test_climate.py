@@ -5,7 +5,7 @@ from unittest.mock import patch
 from freezegun.api import FrozenDateTimeFactory
 from gtw08_modbus import InvalidValueError
 from modbus_connection import ModbusTimeoutError
-from modbus_connection.mock import MockModbusUnit
+from modbus_connection.mock import MockModbusUnit, WriteEvent
 import pytest
 from syrupy.assertion import SnapshotAssertion
 
@@ -151,7 +151,6 @@ async def test_invalid_value(hass: HomeAssistant) -> None:
     ("hvac_mode", "expected"),
     [
         pytest.param(HVACMode.OFF, 2, id="off"),
-        pytest.param(HVACMode.AUTO, 0, id="auto"),
         pytest.param(HVACMode.HEAT, 1, id="heat"),
     ],
 )
@@ -207,3 +206,38 @@ async def test_a_mode_write_refreshes_the_settings_too(
 
     starts = {event.address for event in mock_unit.read_events}
     assert {648, 1107} <= starts
+
+
+@pytest.mark.parametrize("hvac_mode", [HVACMode.COOL, HVACMode.AUTO])
+@pytest.mark.usefixtures("init_integration")
+async def test_set_temperature_with_an_unsupported_mode(
+    hass: HomeAssistant, mock_unit: MockModbusUnit, hvac_mode: HVACMode
+) -> None:
+    """Test a mode a temperature cannot go with is refused before any write."""
+    writes: list[WriteEvent] = []
+    mock_unit.on_write(writes.append)
+
+    with pytest.raises(ServiceValidationError) as err:
+        await hass.services.async_call(
+            CLIMATE_DOMAIN,
+            SERVICE_SET_TEMPERATURE,
+            {ATTR_ENTITY_ID: ZONE_1, ATTR_TEMPERATURE: 20, ATTR_HVAC_MODE: hvac_mode},
+            blocking=True,
+        )
+    assert err.value.translation_key == "temperature_mode_unsupported"
+    assert writes == []
+
+
+@pytest.mark.usefixtures("init_integration")
+async def test_set_temperature_keeps_an_off_zone_off(
+    hass: HomeAssistant, mock_unit: MockModbusUnit
+) -> None:
+    """Test a temperature set on a zone that is off leaves it off."""
+    await hass.services.async_call(
+        CLIMATE_DOMAIN,
+        SERVICE_SET_TEMPERATURE,
+        {ATTR_ENTITY_ID: ZONE_3, ATTR_TEMPERATURE: 21},
+        blocking=True,
+    )
+    assert mock_unit.holding[1688] == 210
+    assert mock_unit.holding[1673] == 2

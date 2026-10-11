@@ -4,7 +4,7 @@ from collections.abc import Awaitable
 from dataclasses import dataclass
 from typing import override
 
-from gtw08_modbus import Gtw08Appliance, InvalidValueError, Zone
+from gtw08_modbus import BoardCategory, Gtw08Appliance, InvalidValueError, Zone
 from modbus_connection import ModbusError
 
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
@@ -15,6 +15,35 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN
 from .coordinator import Gtw08DataUpdateCoordinator, Gtw08RuntimeData, device_identifier
 
+KIND_BURNER = "burner"
+KIND_HEAT_PUMP = "heat_pump"
+
+_KINDS = {
+    BoardCategory.CU_GH: KIND_BURNER,
+    BoardCategory.CU_OH: KIND_BURNER,
+    BoardCategory.EHC: KIND_HEAT_PUMP,
+}
+
+
+def appliance_kinds(device: Gtw08Appliance) -> set[str]:
+    """Whether the appliance has a burner, a heat pump, or both.
+
+    An appliance whose boards say neither gets every sensor.
+    """
+    kinds = set()
+    for board in device.board_list:
+        if board.device_type is None:
+            continue
+        try:
+            category = BoardCategory(board.device_type >> 8)
+        except ValueError:
+            continue
+        if (kind := _KINDS.get(category)) is not None:
+            kinds.add(kind)
+    if device.heat_pump is not None:
+        kinds.add(KIND_HEAT_PUMP)
+    return kinds or {KIND_BURNER, KIND_HEAT_PUMP}
+
 
 @dataclass(frozen=True, kw_only=True)
 class Gtw08EntityDescription(EntityDescription):
@@ -22,6 +51,7 @@ class Gtw08EntityDescription(EntityDescription):
 
     component: str  # attribute name on Gtw08Appliance, e.g. 'appliance'
     zone: int | None = None  # None keeps the entity on the appliance
+    kind: str | None = None  # KIND_BURNER or KIND_HEAT_PUMP for what only one has
 
 
 def zone_identifier(base: str, number: int) -> str:

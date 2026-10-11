@@ -79,7 +79,7 @@ def mock_get_unit(mock_connection: MockModbusConnection) -> Generator[MagicMock]
 def mock_temporary_unit(
     mock_connection: MockModbusConnection,
 ) -> Generator[MagicMock]:
-    """Hand out units on the mock connection when the config flow probes."""
+    """Hand out units on the mock connection for the config flow and removal."""
 
     @asynccontextmanager
     async def _get_temporary_unit(
@@ -89,10 +89,16 @@ def mock_temporary_unit(
     ) -> AsyncIterator[MockModbusUnit]:
         yield mock_connection.for_unit(unit_id)
 
-    with patch(
-        "homeassistant.components.gtw08.config_flow.async_get_temporary_unit",
-        side_effect=_get_temporary_unit,
-    ) as mock_temporary_unit:
+    with (
+        patch(
+            "homeassistant.components.gtw08.config_flow.async_get_temporary_unit",
+            side_effect=_get_temporary_unit,
+        ) as mock_temporary_unit,
+        patch(
+            "homeassistant.components.gtw08.async_get_temporary_unit",
+            side_effect=_get_temporary_unit,
+        ),
+    ):
         yield mock_temporary_unit
 
 

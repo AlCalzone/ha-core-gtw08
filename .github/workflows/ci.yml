@@ -61,8 +61,11 @@ jobs:
       - name: Mypy
         working-directory: core
         run: |
-          .venv/bin/mypy homeassistant/components/gtw08 > mypy.log || true
+          status=0
+          .venv/bin/mypy homeassistant/components/gtw08 > mypy.log || status=$?
           cat mypy.log
+          # Exit code 1 means type errors; anything higher means mypy crashed.
+          test "$status" -le 1
           ! grep '^homeassistant/components/gtw08' mypy.log
       # The quality_scale plugin fails until the brands entry exists.
       - name: Hassfest

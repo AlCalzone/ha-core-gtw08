@@ -22,7 +22,14 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .coordinator import Gtw08ConfigEntry
-from .entity import Gtw08Entity, Gtw08EntityDescription, zone_of
+from .entity import (
+    KIND_BURNER,
+    KIND_HEAT_PUMP,
+    Gtw08Entity,
+    Gtw08EntityDescription,
+    appliance_kinds,
+    zone_of,
+)
 
 PARALLEL_UPDATES = 0
 
@@ -55,6 +62,7 @@ def _generator(
     device_class: BinarySensorDeviceClass | None = None,
     *,
     enabled: bool = True,
+    kind: str | None = None,
 ) -> Gtw08BinarySensorDescription:
     """A bit of register 279."""
     return Gtw08BinarySensorDescription(
@@ -63,6 +71,7 @@ def _generator(
         component="system_status",
         device_class=device_class,
         entity_registry_enabled_default=enabled,
+        kind=kind,
         value_fn=lambda device: _has(device.system_status.generator_status, flag),
     )
 
@@ -73,6 +82,7 @@ def _hydraulic(
     device_class: BinarySensorDeviceClass | None = None,
     *,
     enabled: bool = True,
+    kind: str | None = None,
 ) -> Gtw08BinarySensorDescription:
     """A bit of register 280."""
     return Gtw08BinarySensorDescription(
@@ -81,14 +91,18 @@ def _hydraulic(
         component="system_status",
         device_class=device_class,
         entity_registry_enabled_default=enabled,
+        kind=kind,
         value_fn=lambda device: _has(device.system_status.hydraulic_status, flag),
     )
 
 
 APPLIANCE_BINARY_SENSORS: tuple[Gtw08BinarySensorDescription, ...] = (
-    _generator("flame", GeneratorStatus.FLAME_ON, enabled=False),
+    _generator("flame", GeneratorStatus.FLAME_ON, kind=KIND_BURNER),
     _generator(
-        "heat_pump", GeneratorStatus.HEAT_PUMP_ON, BinarySensorDeviceClass.RUNNING
+        "heat_pump",
+        GeneratorStatus.HEAT_PUMP_ON,
+        BinarySensorDeviceClass.RUNNING,
+        kind=KIND_HEAT_PUMP,
     ),
     _generator(
         "backup_1",
@@ -119,7 +133,7 @@ APPLIANCE_BINARY_SENSORS: tuple[Gtw08BinarySensorDescription, ...] = (
     _hydraulic("pump", HydraulicStatus.PUMP_ON, BinarySensorDeviceClass.RUNNING),
     _hydraulic("dhw_active", HydraulicStatus.DHW_ACTIVE),
     _hydraulic("ch_active", HydraulicStatus.CH_ACTIVE),
-    _hydraulic("cooling_active", HydraulicStatus.COOLING_ACTIVE),
+    _hydraulic("cooling_active", HydraulicStatus.COOLING_ACTIVE, kind=KIND_HEAT_PUMP),
     Gtw08BinarySensorDescription(
         key="service_required",
         translation_key="service_required",
@@ -166,10 +180,12 @@ async def async_setup_entry(
     """Set up the GTW-08 binary sensor platform."""
     runtime_data = entry.runtime_data
     served = runtime_data.served_components
+    kinds = appliance_kinds(runtime_data.device)
     descriptions = [
         description
         for description in APPLIANCE_BINARY_SENSORS
         if description.component in served
+        and (description.kind is None or description.kind in kinds)
     ]
     descriptions.extend(
         description

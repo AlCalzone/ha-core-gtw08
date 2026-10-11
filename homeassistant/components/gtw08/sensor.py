@@ -8,7 +8,6 @@ from typing import override
 from gtw08_modbus import (
     ApplianceStatus,
     ApplianceSubStatus,
-    BoardCategory,
     Cascade,
     ErrorType,
     Gtw08Appliance,
@@ -39,7 +38,14 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import StateType
 
 from .coordinator import Gtw08ConfigEntry
-from .entity import Gtw08Entity, Gtw08EntityDescription, zone_of
+from .entity import (
+    KIND_BURNER,
+    KIND_HEAT_PUMP,
+    Gtw08Entity,
+    Gtw08EntityDescription,
+    appliance_kinds,
+    zone_of,
+)
 
 PARALLEL_UPDATES = 0
 
@@ -63,42 +69,11 @@ def _cascade(device: Gtw08Appliance) -> Cascade:
     return device.cascade
 
 
-KIND_BURNER = "burner"
-KIND_HEAT_PUMP = "heat_pump"
-
-_KINDS = {
-    BoardCategory.CU_GH: KIND_BURNER,
-    BoardCategory.CU_OH: KIND_BURNER,
-    BoardCategory.EHC: KIND_HEAT_PUMP,
-}
-
-
-def appliance_kinds(device: Gtw08Appliance) -> set[str]:
-    """Whether the appliance has a burner, a heat pump, or both.
-
-    An appliance whose boards say neither gets every sensor.
-    """
-    kinds = set()
-    for board in device.board_list:
-        if board.device_type is None:
-            continue
-        try:
-            category = BoardCategory(board.device_type >> 8)
-        except ValueError:
-            continue
-        if (kind := _KINDS.get(category)) is not None:
-            kinds.add(kind)
-    if device.heat_pump is not None:
-        kinds.add(KIND_HEAT_PUMP)
-    return kinds or {KIND_BURNER, KIND_HEAT_PUMP}
-
-
 @dataclass(frozen=True, kw_only=True)
 class Gtw08SensorDescription(SensorEntityDescription, Gtw08EntityDescription):
     """Describe a GTW-08 sensor."""
 
     value_fn: ValueFn
-    kind: str | None = None  # KIND_BURNER or KIND_HEAT_PUMP for a sensor only one has
 
 
 def _temperature(
@@ -449,7 +424,9 @@ def _board_error_type(device: Gtw08Appliance, number: int) -> StateType | IntEnu
     board = device.board_list[number - 1]
     if not board.is_available:
         return None
-    return board.error_type or "none"
+    if board.error_code is None:
+        return "none"
+    return board.error_type
 
 
 def board_sensors(number: int, model: str | None) -> list[Gtw08SensorDescription]:

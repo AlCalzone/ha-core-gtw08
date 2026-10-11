@@ -226,10 +226,12 @@ class Gtw08ConfigFlow(ConfigFlow, domain=DOMAIN):
             description_placeholders=placeholders,
         )
 
-    def _abort_if_link_configured(self, data: Mapping[str, Any]) -> None:
+    def _abort_if_link_configured(
+        self, data: Mapping[str, Any], *, other_than: str | None = None
+    ) -> None:
         """Abort when an entry already reaches the same gateway and unit."""
         for entry in self._async_current_entries(include_ignore=False):
-            if _link(entry.data) == _link(data):
+            if entry.entry_id != other_than and _link(entry.data) == _link(data):
                 raise AbortFlow("already_configured")
 
     async def async_step_reconfigure(
@@ -242,6 +244,7 @@ class Gtw08ConfigFlow(ConfigFlow, domain=DOMAIN):
         placeholders: dict[str, str] = {}
         if user_input is not None:
             data = _flatten(connection_type, user_input)
+            self._abort_if_link_configured(data, other_than=entry.entry_id)
             # Release the entry's hold on the old link first, because the
             # shared connection refuses other settings for the same endpoint.
             relinking = False

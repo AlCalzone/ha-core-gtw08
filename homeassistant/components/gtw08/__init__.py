@@ -1,10 +1,12 @@
 """Integrate heating appliances behind a GTW-08 Modbus gateway."""
 
+import logging
 from typing import TYPE_CHECKING
 
-from gtw08_modbus import Gtw08Appliance
+from gtw08_modbus import Gtw08Appliance, Gtw08Error, RemoteControlMode, SystemControl
+from modbus_connection import ModbusError
 
-from homeassistant.components.modbus import async_get_unit
+from homeassistant.components.modbus import async_get_temporary_unit, async_get_unit
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
@@ -28,6 +30,8 @@ from .coordinator import (
 )
 from .entity import zone_identifier
 from .services import async_setup_services
+
+_LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
@@ -82,13 +86,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: Gtw08ConfigEntry) -> boo
     served = entry.runtime_data.served_components
     zones = set(device.zone_slots)
 
+    reload_scheduled = False
+
     @callback
     def _async_reload_when_grown() -> None:
-        if not (
+        nonlocal reload_scheduled
+        if reload_scheduled or (
             entry.runtime_data.served_components <= served
             and set(device.zone_slots) <= zones
         ):
-            hass.config_entries.async_schedule_reload(entry.entry_id)
+            return
+        reload_scheduled = True
+        hass.config_entries.async_schedule_reload(entry.entry_id)
 
     if device.pending_blocks:
         entry.async_on_unload(readings.async_add_listener(_async_reload_when_grown))
@@ -118,3 +127,26 @@ async def async_remove_config_entry_device(
 async def async_unload_entry(hass: HomeAssistant, entry: Gtw08ConfigEntry) -> bool:
     """Unload a config entry."""
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: Gtw08ConfigEntry) -> None:
+    """Hand the heat demand back to the zones before the entry is gone.
+
+    Unloading leaves remote control alone, because a reload or restart comes
+    back to it. Nothing would after removal.
+    """
+    try:
+        async with async_get_temporary_unit(
+            hass, create_modbus_params(entry.data), entry.data[CONF_UNIT_ID]
+        ) as unit:
+            control = SystemControl(unit)
+            await control.async_update()
+            if control.mode not in (None, RemoteControlMode.MONITORING_ONLY):
+                await control.async_stop()
+    except (Gtw08Error, ModbusError, HomeAssistantError) as err:
+        _LOGGER.warning(
+            "Could not check remote control of %s while removing it. If it was"
+            " on, the appliance keeps ignoring its zones: %s",
+            entry.title,
+            err,
+        )

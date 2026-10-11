@@ -131,7 +131,7 @@ Each zone that heats rooms is a thermostat:
 - **Heat** holds the manual room temperature.
 - **Off** keeps frost protection only.
 
-Setting a temperature while the zone is on **Auto** switches it to **Heat**, so the zone holds the new temperature. Pass an HVAC mode along with the temperature to choose the mode yourself.
+Setting a temperature while the zone is on **Auto** switches it to **Heat**, so the zone holds the new temperature. A zone that is **Off** stays off and uses the temperature once it is switched to **Heat**. Along with a temperature, you can pass **Heat** or **Off** as the HVAC mode. **Auto** is refused there, because the time program ignores the manual temperature.
 
 ### Selects
 
@@ -261,7 +261,7 @@ The gateway reads a value from the appliance the first time it is asked for it, 
 
 ## Removing the integration
 
-If you used remote control of the heat demand, run the **Stop remote control** action first. Otherwise the appliance keeps ignoring its zones after the integration is gone.
+Removing the integration hands the heat demand back to the zones if remote control is on. If the gateway cannot be reached at that moment, the appliance keeps ignoring its zones. Run the **Stop remote control** action before removing the integration to be sure.
 
 This integration follows standard integration removal.
 

@@ -69,3 +69,28 @@ async def test_cascade(
     assert hass.states.get(f"{PREFIX}_cascade_return_temperature").state == "50.2"
     assert hass.states.get(f"{PREFIX}_cascade_state").state == "generator_ch"
     assert hass.states.get(f"{PREFIX}_cascade_requested_power").state == "24.5"
+
+
+@pytest.mark.parametrize(
+    ("words", "expected"),
+    [
+        pytest.param([531, 0], "locking", id="locking"),
+        pytest.param([531, 0xFF], STATE_UNKNOWN, id="type_unknown"),
+        pytest.param([0xFFFF, 0], "none", id="no_error"),
+    ],
+)
+@pytest.mark.usefixtures("init_integration")
+async def test_board_error_type(
+    hass: HomeAssistant,
+    mock_unit: MockModbusUnit,
+    freezer: FrozenDateTimeFactory,
+    words: list[int],
+    expected: str,
+) -> None:
+    """Test a locking error shows as locking, and an unknown type as unknown."""
+    mock_unit.holding[532] = [*words, 0xFFFF, 0]
+    freezer.tick(SCAN_INTERVAL)
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+
+    assert hass.states.get(f"{PREFIX}_board_1_ehc_04_error_type").state == expected

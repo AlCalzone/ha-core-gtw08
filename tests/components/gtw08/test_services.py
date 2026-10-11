@@ -2,7 +2,11 @@
 
 from typing import Any
 
-from modbus_connection import IllegalDataAddressError, ModbusTimeoutError
+from modbus_connection import (
+    GatewayTargetError,
+    IllegalDataAddressError,
+    ModbusTimeoutError,
+)
 from modbus_connection.mock import MockModbusUnit, WriteEvent
 import pytest
 
@@ -106,7 +110,7 @@ async def test_a_request_without_its_setpoint(
             heat_demand="heating",
         )
 
-    assert err.value.translation_key == "invalid_value"
+    assert err.value.translation_key == "temperature_required"
     assert writes == []
 
 
@@ -137,3 +141,102 @@ async def test_a_gateway_without_remote_control(
     with pytest.raises(ServiceValidationError) as err:
         await _call(hass, mock_config_entry, SERVICE_STOP_REMOTE_CONTROL)
     assert err.value.translation_key == "remote_control_unsupported"
+
+
+async def test_a_failed_request_shows_the_state_it_left(
+    hass: HomeAssistant,
+    init_integration: MockConfigEntry,
+    mock_unit: MockModbusUnit,
+) -> None:
+    """Test the remote control sensor is refreshed after a failed request too."""
+    mock_unit.holding[258] = 2  # remote mode, set behind Home Assistant's back
+    mock_unit.fail_write(258, ModbusTimeoutError())
+
+    with pytest.raises(HomeAssistantError):
+        await _call(
+            hass,
+            init_integration,
+            SERVICE_REQUEST_HEAT_DEMAND,
+            mode="temperature",
+            heat_demand="heating",
+            temperature=50,
+        )
+
+    assert hass.states.get(REMOTE_CONTROL).state == "on"
+
+
+async def test_a_fractional_power(
+    hass: HomeAssistant, init_integration: MockConfigEntry
+) -> None:
+    """Test a power the gateway cannot take is refused by the library."""
+    with pytest.raises(ServiceValidationError) as err:
+        await _call(
+            hass,
+            init_integration,
+            SERVICE_REQUEST_HEAT_DEMAND,
+            mode="power",
+            heat_demand="heating",
+            power=50.7,
+        )
+    assert err.value.translation_key == "invalid_value"
+
+
+async def test_a_request_without_its_power(
+    hass: HomeAssistant, init_integration: MockConfigEntry
+) -> None:
+    """Test a power mode without a power is refused."""
+    with pytest.raises(ServiceValidationError) as err:
+        await _call(
+            hass,
+            init_integration,
+            SERVICE_REQUEST_HEAT_DEMAND,
+            mode="power",
+            heat_demand="heating",
+        )
+    assert err.value.translation_key == "power_required"
+
+
+async def test_remote_control_still_pending(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_get_unit: Any,
+    mock_unit: MockModbusUnit,
+) -> None:
+    """Test the actions ask to wait while the gateway is still fetching."""
+    mock_unit.fail_read(256, GatewayTargetError())
+    mock_config_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(mock_config_entry.entry_id)
+
+    with pytest.raises(ServiceValidationError) as err:
+        await _call(hass, mock_config_entry, SERVICE_STOP_REMOTE_CONTROL)
+    assert err.value.translation_key == "remote_control_not_ready"
+
+
+async def test_removing_the_entry_stops_remote_control(
+    hass: HomeAssistant,
+    init_integration: MockConfigEntry,
+    mock_unit: MockModbusUnit,
+    mock_temporary_unit: Any,
+) -> None:
+    """Test removing the entry hands the heat demand back to the zones."""
+    mock_unit.holding[258] = 2
+    await hass.config_entries.async_remove(init_integration.entry_id)
+    await hass.async_block_till_done()
+
+    assert mock_unit.holding[258] == 3
+
+
+async def test_removing_the_entry_logs_a_failed_stop(
+    hass: HomeAssistant,
+    init_integration: MockConfigEntry,
+    mock_unit: MockModbusUnit,
+    mock_temporary_unit: Any,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test a stop that fails while removing is logged."""
+    mock_unit.holding[258] = 2
+    mock_unit.fail_write(258, ModbusTimeoutError())
+    await hass.config_entries.async_remove(init_integration.entry_id)
+    await hass.async_block_till_done()
+
+    assert "keeps ignoring its zones" in caplog.text

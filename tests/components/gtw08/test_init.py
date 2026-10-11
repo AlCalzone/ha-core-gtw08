@@ -330,3 +330,27 @@ async def test_a_settings_failure_takes_only_settings_entities(
         hass.states.get("select.gtw_08_ehc_04_zone_2_operating_mode").state == "manual"
     )
     assert hass.states.get("binary_sensor.gtw_08_ehc_04_heat_pump").state == "on"
+
+
+async def test_a_grown_entry_reloads_once(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_get_unit: MagicMock,
+    mock_unit: MockModbusUnit,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """Test two refreshes after a pending block answers schedule one reload."""
+    mock_unit.fail_read(9230, GatewayTargetError())
+    mock_config_entry.add_to_hass(hass)
+    with patch("homeassistant.components.gtw08.PLATFORMS", [Platform.SENSOR]):
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+    mock_unit.fail_read(9230, None)
+
+    with patch.object(hass.config_entries, "async_schedule_reload") as reload:
+        for _ in range(2):
+            freezer.tick(SCAN_INTERVAL)
+            async_fire_time_changed(hass)
+            await hass.async_block_till_done()
+
+    reload.assert_called_once_with(mock_config_entry.entry_id)
