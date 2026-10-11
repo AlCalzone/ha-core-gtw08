@@ -1,0 +1,123 @@
+{
+  "entity": {
+    "binary_sensor": {
+      "ch_active": {
+        "default": "mdi:radiator-off",
+        "state": {
+          "on": "mdi:radiator"
+        }
+      },
+      "cooling_active": {
+        "default": "mdi:snowflake-off",
+        "state": {
+          "on": "mdi:snowflake"
+        }
+      },
+      "dhw_active": {
+        "default": "mdi:water-boiler-off",
+        "state": {
+          "on": "mdi:water-boiler"
+        }
+      },
+      "flame": {
+        "default": "mdi:fire-off",
+        "state": {
+          "on": "mdi:fire"
+        }
+      },
+      "heat_pump": {
+        "default": "mdi:heat-pump-outline",
+        "state": {
+          "on": "mdi:heat-pump"
+        }
+      },
+      "pump": {
+        "default": "mdi:pump-off",
+        "state": {
+          "on": "mdi:pump"
+        }
+      }
+    },
+    "number": {
+      "heating_curve_footpoint": {
+        "default": "mdi:chart-bell-curve-cumulative"
+      },
+      "heating_curve_gradient": {
+        "default": "mdi:chart-bell-curve-cumulative"
+      },
+      "remote_power": {
+        "default": "mdi:gauge"
+      }
+    },
+    "select": {
+      "remote_control_mode": {
+        "default": "mdi:remote"
+      },
+      "remote_heat_demand": {
+        "default": "mdi:heat-wave"
+      },
+      "zone_mode_setting": {
+        "default": "mdi:calendar-clock"
+      }
+    },
+    "sensor": {
+      "backup_1_starts": {
+        "default": "mdi:counter"
+      },
+      "backup_2_starts": {
+        "default": "mdi:counter"
+      },
+      "board_error_code": {
+        "default": "mdi:alert-circle-outline"
+      },
+      "board_error_type": {
+        "default": "mdi:alert-circle-outline"
+      },
+      "cascade_producer_count": {
+        "default": "mdi:counter"
+      },
+      "cascade_state": {
+        "default": "mdi:information-outline"
+      },
+      "cop": {
+        "default": "mdi:heat-pump"
+      },
+      "generator_starts": {
+        "default": "mdi:counter"
+      },
+      "pump_speed": {
+        "default": "mdi:pump"
+      },
+      "relative_power": {
+        "default": "mdi:gauge"
+      },
+      "season_mode": {
+        "default": "mdi:sun-snowflake-variant"
+      },
+      "service_notification": {
+        "default": "mdi:wrench-clock"
+      },
+      "starts_since_service": {
+        "default": "mdi:counter"
+      },
+      "status": {
+        "default": "mdi:information-outline"
+      },
+      "sub_status": {
+        "default": "mdi:information-outline"
+      },
+      "system_power": {
+        "default": "mdi:gauge"
+      },
+      "zone_activity": {
+        "default": "mdi:sun-clock"
+      },
+      "zone_mode": {
+        "default": "mdi:calendar-clock"
+      },
+      "zone_pump_starts": {
+        "default": "mdi:counter"
+      }
+    }
+  }
+}

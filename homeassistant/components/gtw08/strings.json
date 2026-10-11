@@ -1,0 +1,579 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "[%key:common::config_flow::abort::already_configured_device%]",
+      "unique_id_mismatch": "The appliance answering on these settings is a different one than this entry was set up for."
+    },
+    "error": {
+      "cannot_connect": "Failed to connect: {error}",
+      "no_appliance": "The gateway answered, but reports no appliance behind it. Check the L-Bus wiring between the gateway and the appliance."
+    },
+    "step": {
+      "reconfigure": {
+        "data": {
+          "baudrate": "[%key:component::gtw08::config::step::serial::data::baudrate%]",
+          "device": "[%key:component::gtw08::config::step::serial::data::device%]",
+          "host": "[%key:common::config_flow::data::host%]",
+          "parity": "[%key:component::gtw08::config::step::serial::data::parity%]",
+          "port": "[%key:common::config_flow::data::port%]"
+        },
+        "data_description": {
+          "baudrate": "[%key:component::gtw08::config::step::serial::data_description::baudrate%]",
+          "device": "[%key:component::gtw08::config::step::serial::data_description::device%]",
+          "host": "[%key:component::gtw08::config::step::tcp::data_description::host%]",
+          "parity": "[%key:component::gtw08::config::step::serial::data_description::parity%]",
+          "port": "[%key:component::gtw08::config::step::tcp::data_description::port%]"
+        },
+        "description": "Update how this gateway is reached.",
+        "sections": {
+          "more_options": {
+            "data": {
+              "unit_id": "[%key:component::gtw08::config::step::serial::sections::more_options::data::unit_id%]"
+            },
+            "data_description": {
+              "unit_id": "[%key:component::gtw08::config::step::serial::sections::more_options::data_description::unit_id%]"
+            },
+            "name": "[%key:component::gtw08::config::step::serial::sections::more_options::name%]"
+          }
+        }
+      },
+      "rtu_over_tcp": {
+        "data": {
+          "baudrate": "[%key:component::gtw08::config::step::serial::data::baudrate%]",
+          "host": "[%key:common::config_flow::data::host%]",
+          "parity": "[%key:component::gtw08::config::step::serial::data::parity%]",
+          "port": "[%key:common::config_flow::data::port%]"
+        },
+        "data_description": {
+          "baudrate": "[%key:component::gtw08::config::step::serial::data_description::baudrate%]",
+          "host": "[%key:component::gtw08::config::step::tcp::data_description::host%]",
+          "parity": "[%key:component::gtw08::config::step::serial::data_description::parity%]",
+          "port": "[%key:component::gtw08::config::step::tcp::data_description::port%]"
+        },
+        "description": "Set up a GTW-08 gateway behind a converter that passes the RS-485 traffic through unchanged.",
+        "sections": {
+          "more_options": {
+            "data": {
+              "unit_id": "[%key:component::gtw08::config::step::serial::sections::more_options::data::unit_id%]"
+            },
+            "data_description": {
+              "unit_id": "[%key:component::gtw08::config::step::serial::sections::more_options::data_description::unit_id%]"
+            },
+            "name": "[%key:component::gtw08::config::step::serial::sections::more_options::name%]"
+          }
+        }
+      },
+      "serial": {
+        "data": {
+          "baudrate": "Baud rate",
+          "device": "Serial port",
+          "parity": "Parity"
+        },
+        "data_description": {
+          "baudrate": "Set with DIP switches 1 and 2 on the gateway. The factory setting is 9600.",
+          "device": "The RS-485 adapter the gateway's Modbus terminals are wired to.",
+          "parity": "Set with DIP switches 3 and 4 on the gateway. The factory setting is none."
+        },
+        "description": "Set up a GTW-08 gateway wired to an RS-485 adapter on this machine.",
+        "sections": {
+          "more_options": {
+            "data": {
+              "unit_id": "Unit ID"
+            },
+            "data_description": {
+              "unit_id": "The gateway's Modbus address: 100 plus the position of its rotary dial. The factory setting is 100."
+            },
+            "name": "More options"
+          }
+        }
+      },
+      "tcp": {
+        "data": {
+          "host": "[%key:common::config_flow::data::host%]",
+          "port": "[%key:common::config_flow::data::port%]"
+        },
+        "data_description": {
+          "host": "The hostname or IP address of the RS-485 to Ethernet converter the gateway is wired to.",
+          "port": "The TCP port the converter listens on."
+        },
+        "description": "Set up a GTW-08 gateway behind a converter that translates Modbus RTU to Modbus TCP.",
+        "sections": {
+          "more_options": {
+            "data": {
+              "unit_id": "[%key:component::gtw08::config::step::serial::sections::more_options::data::unit_id%]"
+            },
+            "data_description": {
+              "unit_id": "[%key:component::gtw08::config::step::serial::sections::more_options::data_description::unit_id%]"
+            },
+            "name": "[%key:component::gtw08::config::step::serial::sections::more_options::name%]"
+          }
+        }
+      },
+      "user": {
+        "description": "How is the GTW-08 gateway connected?",
+        "menu_options": {
+          "rtu_over_tcp": "RS-485 to Ethernet converter, transparent",
+          "serial": "RS-485 adapter on this machine",
+          "tcp": "RS-485 to Ethernet converter, Modbus TCP"
+        }
+      }
+    }
+  },
+  "device": {
+    "zone": {
+      "name": "Zone {number}"
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "backup_1": {
+        "name": "Backup stage 1"
+      },
+      "backup_2": {
+        "name": "Backup stage 2"
+      },
+      "ch_active": {
+        "name": "Central heating"
+      },
+      "cooling_active": {
+        "name": "Cooling"
+      },
+      "dhw_active": {
+        "name": "Hot water"
+      },
+      "dhw_backup": {
+        "name": "Hot water backup"
+      },
+      "error": {
+        "name": "Error"
+      },
+      "flame": {
+        "name": "Flame"
+      },
+      "heat_pump": {
+        "name": "Heat pump"
+      },
+      "pump": {
+        "name": "Pump"
+      },
+      "reset_needed": {
+        "name": "Reset needed"
+      },
+      "service_required": {
+        "name": "Service required"
+      },
+      "water_pressure_low": {
+        "name": "Water pressure low"
+      }
+    },
+    "number": {
+      "flow_setpoint_fixed": {
+        "name": "Fixed flow temperature"
+      },
+      "heating_curve_footpoint": {
+        "name": "Heating curve footpoint"
+      },
+      "heating_curve_gradient": {
+        "name": "Heating curve gradient"
+      },
+      "remote_power": {
+        "name": "Remote power request"
+      },
+      "remote_temperature": {
+        "name": "Remote temperature request"
+      }
+    },
+    "select": {
+      "remote_control_mode": {
+        "name": "Remote control",
+        "state": {
+          "monitoring_only": "Monitoring only",
+          "power": "Power",
+          "temperature": "Temperature",
+          "temperature_and_power": "Temperature and power"
+        }
+      },
+      "remote_heat_demand": {
+        "name": "Remote heat demand",
+        "state": {
+          "cooling": "Cooling",
+          "heating": "Heating",
+          "standby": "Standby"
+        }
+      },
+      "zone_mode_setting": {
+        "name": "Operating mode",
+        "state": {
+          "manual": "Manual",
+          "off": "[%key:common::state::off%]",
+          "scheduling": "Scheduling"
+        }
+      }
+    },
+    "sensor": {
+      "actual_power": {
+        "name": "Heat output"
+      },
+      "backup_1_hours": {
+        "name": "Backup stage 1 operating hours"
+      },
+      "backup_1_starts": {
+        "name": "Backup stage 1 starts"
+      },
+      "backup_2_hours": {
+        "name": "Backup stage 2 operating hours"
+      },
+      "backup_2_starts": {
+        "name": "Backup stage 2 starts"
+      },
+      "board_error_code": {
+        "name": "Board {number} ({model}) error code"
+      },
+      "board_error_type": {
+        "name": "Board {number} ({model}) error type",
+        "state": {
+          "blocking": "Blocking",
+          "locking": "Locking",
+          "none": "No error",
+          "warning": "Warning"
+        }
+      },
+      "cascade_flow_temperature": {
+        "name": "Cascade flow temperature"
+      },
+      "cascade_producer_count": {
+        "name": "Cascade producers"
+      },
+      "cascade_requested_power": {
+        "name": "Cascade requested power"
+      },
+      "cascade_return_temperature": {
+        "name": "Cascade return temperature"
+      },
+      "cascade_state": {
+        "name": "Cascade state",
+        "state": {
+          "auto_filling": "Auto filling",
+          "blocking_mode": "Blocking mode",
+          "control_unit_cooling": "Control unit cooling",
+          "controlled_stop": "Controlled stop",
+          "cooling_active": "Cooling active",
+          "deaeration": "Deaeration",
+          "device_mode": "Service tool control",
+          "factory_test": "Factory test",
+          "forced_calibration": "Forced calibration",
+          "frost_protection": "Frost protection",
+          "generator_ch": "Running for central heating",
+          "generator_dhw": "Running for domestic hot water",
+          "generator_start": "Generator start",
+          "generator_stop": "Generator stop",
+          "halted": "Halted",
+          "heat_demand": "Heat demand",
+          "hydronic_balancing": "Hydronic balancing",
+          "load_test_ch_max": "Load test CH at maximum",
+          "load_test_custom": "Load test custom",
+          "load_test_dhw_max": "Load test DHW at maximum",
+          "load_test_min": "Load test at minimum",
+          "locking_mode": "Locking mode",
+          "manual_heat_demand": "Manual heat demand",
+          "pump_post_run": "Pump post run",
+          "reset_in_progress": "Reset in progress",
+          "standby": "Standby",
+          "unknown": "Unknown"
+        }
+      },
+      "cop": {
+        "name": "Coefficient of performance"
+      },
+      "dhw_setpoint": {
+        "name": "Hot water flow setpoint"
+      },
+      "dhw_temperature": {
+        "name": "Hot water temperature"
+      },
+      "energy_consumed_backup": {
+        "name": "Energy consumed by backup"
+      },
+      "energy_consumed_ch": {
+        "name": "Energy consumed for heating"
+      },
+      "energy_consumed_cooling": {
+        "name": "Energy consumed for cooling"
+      },
+      "energy_consumed_dhw": {
+        "name": "Energy consumed for hot water"
+      },
+      "energy_consumed_total": {
+        "name": "Energy consumed"
+      },
+      "energy_delivered_backup": {
+        "name": "Heat delivered by backup"
+      },
+      "energy_delivered_ch": {
+        "name": "Heat delivered for heating"
+      },
+      "energy_delivered_cooling": {
+        "name": "Cooling delivered"
+      },
+      "energy_delivered_dhw": {
+        "name": "Heat delivered for hot water"
+      },
+      "energy_delivered_total": {
+        "name": "Heat delivered"
+      },
+      "flow_temperature": {
+        "name": "Flow temperature"
+      },
+      "flue_gas_temperature": {
+        "name": "Flue gas temperature"
+      },
+      "generator_hours": {
+        "name": "Operating hours"
+      },
+      "generator_starts": {
+        "name": "Starts"
+      },
+      "heat_pump_flow_temperature": {
+        "name": "Heat pump flow temperature"
+      },
+      "heat_pump_return_temperature": {
+        "name": "Heat pump return temperature"
+      },
+      "hours_producing_since_service": {
+        "name": "Operating hours since service"
+      },
+      "hours_since_service": {
+        "name": "Hours since service"
+      },
+      "mains_hours": {
+        "name": "Hours on mains power"
+      },
+      "outdoor_temperature": {
+        "name": "Outdoor temperature"
+      },
+      "pump_speed": {
+        "name": "Pump speed"
+      },
+      "relative_power": {
+        "name": "Relative power"
+      },
+      "return_temperature": {
+        "name": "Return temperature"
+      },
+      "season_mode": {
+        "name": "Season",
+        "state": {
+          "frost_protection": "Frost protection",
+          "summer": "Summer",
+          "summer_neutral_band": "Summer neutral band",
+          "winter": "Winter"
+        }
+      },
+      "service_notification": {
+        "name": "Service notification",
+        "state": {
+          "a": "A",
+          "b": "B",
+          "c": "C",
+          "custom": "Custom",
+          "d": "D",
+          "none": "None"
+        }
+      },
+      "starts_since_service": {
+        "name": "Starts since service"
+      },
+      "status": {
+        "name": "Status",
+        "state": {
+          "auto_filling": "Auto filling",
+          "blocking_mode": "Blocking mode",
+          "control_unit_cooling": "Control unit cooling",
+          "controlled_stop": "Controlled stop",
+          "cooling_active": "Cooling active",
+          "deaeration": "Deaeration",
+          "device_mode": "Service tool control",
+          "factory_test": "Factory test",
+          "forced_calibration": "Forced calibration",
+          "frost_protection": "Frost protection",
+          "generator_ch": "Running for central heating",
+          "generator_dhw": "Running for domestic hot water",
+          "generator_start": "Generator start",
+          "generator_stop": "Generator stop",
+          "halted": "Halted",
+          "heat_demand": "Heat demand",
+          "hydronic_balancing": "Hydronic balancing",
+          "load_test_ch_max": "Load test CH at maximum",
+          "load_test_custom": "Load test custom",
+          "load_test_dhw_max": "Load test DHW at maximum",
+          "load_test_min": "Load test at minimum",
+          "locking_mode": "Locking mode",
+          "manual_heat_demand": "Manual heat demand",
+          "pump_post_run": "Pump post run",
+          "reset_in_progress": "Reset in progress",
+          "standby": "Standby",
+          "unknown": "Unknown"
+        }
+      },
+      "sub_status": {
+        "name": "Sub status",
+        "state": {
+          "anti_cycling": "Anti cycling",
+          "auto_filling_installation": "Auto filling installation",
+          "auto_filling_top_up": "Auto filling top up",
+          "blocking_active": "Blocking active",
+          "blocking_input_backup_off": "Blocking input: backup off",
+          "blocking_input_heat_pump_backup_off": "Blocking input: heat pump and backup off",
+          "blocking_input_heat_pump_off": "Blocking input: heat pump off",
+          "burner_on_command_to_safety_unit": "Burner on command to safety unit",
+          "calibration": "Calibration",
+          "ch_resume": "CH resume",
+          "close_external_gas_valve": "Close external gas valve",
+          "close_flue_gas_valve": "Close flue gas valve",
+          "close_hydraulic_valve": "Close hydraulic valve",
+          "close_pump": "Close pump",
+          "cold_start": "Cold start",
+          "compressor_relieved": "Compressor relieved",
+          "deair_pump_valve_ch": "Deair pump valve CH",
+          "deair_pump_valve_dhw": "Deair pump valve DHW",
+          "deair_valve_ch": "Deair valve CH",
+          "deair_valve_dhw": "Deair valve DHW",
+          "decreased_max_power": "Decreased max power",
+          "defrost_curative": "Defrost curative",
+          "defrost_heat_pump_backup": "Defrost heat pump backup",
+          "defrost_preventive": "Defrost preventive",
+          "defrost_with_backup": "Defrost with backup",
+          "defrost_with_heat_pump": "Defrost with heat pump",
+          "fan_to_post_purge": "Fan to post purge",
+          "fan_to_pre_purge": "Fan to pre purge",
+          "flame_check": "Flame check",
+          "free_cooling_pump_off": "Free cooling pump off",
+          "free_cooling_pump_on": "Free cooling pump on",
+          "generator_starting": "Generator starting",
+          "generators_relieved": "Generators relieved",
+          "gradient_level_1_power_control": "Gradient level 1 power control",
+          "gradient_level_2_power_control": "Gradient level 2 power control",
+          "gradient_level_3_power_control": "Gradient level 3 power control",
+          "heat_pump_flow_over_tmax": "Heat pump flow over Tmax",
+          "heat_pump_off_flow_tmax": "Heat pump off flow Tmax",
+          "heat_pump_off_high_humidity": "Heat pump off high humidity",
+          "heat_pump_off_water_flow": "Heat pump off water flow",
+          "heat_pump_relieved_cooling": "Heat pump relieved cooling",
+          "heat_pump_stop_by_hybrid": "Heat pump stop by hybrid",
+          "heat_pump_stop_outdoor_temperature": "Heat pump stop outdoor temperature",
+          "heat_pump_tmax_backup_on": "Heat pump Tmax backup on",
+          "humidity_setpoint": "Humidity setpoint",
+          "ignition": "Ignition",
+          "increased_min_power": "Increased min power",
+          "initialising_blocking": "Initialising blocking",
+          "initialising_blocking_parameters": "Initialising blocking parameters",
+          "initialising_csu": "Initialising CSU",
+          "initialising_done": "Initialising done",
+          "initialising_identifiers": "Initialising identifiers",
+          "initialising_safety_unit": "Initialising safety unit",
+          "interpurge": "Interpurge",
+          "limited_internal_setpoint": "Limited internal setpoint",
+          "limited_power_on_flue_gas_temperature": "Limited power on flue gas temperature",
+          "low_tariff": "Low tariff",
+          "no_producer_available": "No producer available",
+          "normal_internal_setpoint": "Normal internal setpoint",
+          "normal_power_control": "Normal power control",
+          "offset_adaption": "Offset adaption",
+          "open_external_flue_gas_valve": "Open external flue gas valve",
+          "open_hydraulic_valve": "Open hydraulic valve",
+          "open_pump": "Open pump",
+          "outdoor_limit_heat_pump_off": "Outdoor limit heat pump off",
+          "pre_ignition": "Pre ignition",
+          "protect_flame_power_control": "Protect flame power control",
+          "pump_post_running": "Pump post running",
+          "pv_heat_pump_and_backup": "PV with heat pump and backup",
+          "pv_with_heat_pump": "PV with heat pump",
+          "reduced_setpoint": "Reduced setpoint",
+          "safety_unit_out_of_resets": "Safety unit out of resets",
+          "safety_unit_remove_burner": "Safety unit remove burner",
+          "smart_grid": "Smart grid",
+          "source_pump_backup": "Source pump backup",
+          "source_pump_post_run": "Source pump post run",
+          "source_pump_pre_run": "Source pump pre run",
+          "stabilization_time": "Stabilization time",
+          "standby": "Standby",
+          "start_anti_cycle_time": "Start anti cycle time",
+          "start_to_flue_gas_valve": "Start to flue gas valve",
+          "stop_fan": "Stop fan",
+          "stop_fan_to_flue_gas_valve_rpm": "Stop fan to flue gas valve RPM",
+          "unknown": "Unknown",
+          "valve_proving_test": "Valve proving test",
+          "wait_for_release_signal": "Wait for release signal",
+          "waiting_for_start_conditions": "Waiting for start conditions",
+          "waiting_for_water_pressure": "Waiting for water pressure",
+          "warm_up": "Warm up"
+        }
+      },
+      "system_power": {
+        "name": "System power request"
+      },
+      "water_pressure": {
+        "name": "Water pressure"
+      },
+      "zone_activity": {
+        "name": "Activity",
+        "state": {
+          "anti_legionella": "Anti-legionella",
+          "comfort": "Comfort",
+          "eco": "Eco",
+          "off": "Off"
+        }
+      },
+      "zone_flow_setpoint": {
+        "name": "Flow temperature setpoint"
+      },
+      "zone_flow_temperature": {
+        "name": "Flow temperature"
+      },
+      "zone_mode": {
+        "name": "Operating mode",
+        "state": {
+          "manual": "Manual",
+          "off": "Off",
+          "scheduling": "Scheduling",
+          "temporary": "Temporary"
+        }
+      },
+      "zone_pump_hours": {
+        "name": "Pump operating hours"
+      },
+      "zone_pump_starts": {
+        "name": "Pump starts"
+      },
+      "zone_room_setpoint": {
+        "name": "Room temperature setpoint"
+      }
+    }
+  },
+  "exceptions": {
+    "link_settings_in_use": {
+      "message": "The gateway is already in use with different link settings: {error}"
+    },
+    "modbus_error": {
+      "message": "Communication with the gateway failed: {error}"
+    },
+    "no_appliance": {
+      "message": "The gateway reports no appliance behind it."
+    },
+    "no_component_answered": {
+      "message": "The gateway answered none of the requests of this poll."
+    },
+    "write_failed": {
+      "message": "Writing to the appliance failed: {error}"
+    }
+  },
+  "selector": {
+    "parity": {
+      "options": {
+        "even": "Even",
+        "none": "None",
+        "odd": "Odd"
+      }
+    }
+  }
+}

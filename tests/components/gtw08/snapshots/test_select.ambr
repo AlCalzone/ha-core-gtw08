@@ -1,0 +1,308 @@
+# serializer version: 1
+# name: test_entities[select.gtw_08_ehc_04_remote_control-entry]
+  EntityRegistryEntrySnapshot({
+    'aliases': list([
+      None,
+    ]),
+    'area_id': None,
+    'capabilities': dict({
+      <SelectEntityCapabilityAttribute.OPTIONS: 'options'>: list([
+        'temperature_and_power',
+        'power',
+        'temperature',
+        'monitoring_only',
+      ]),
+    }),
+    'config_entry_id': <ANY>,
+    'config_subentry_id': <ANY>,
+    'device_class': None,
+    'device_id': <ANY>,
+    'disabled_by': None,
+    'domain': 'select',
+    'entity_category': <EntityCategory.CONFIG: 'config'>,
+    'entity_id': 'select.gtw_08_ehc_04_remote_control',
+    'has_entity_name': True,
+    'hidden_by': None,
+    'icon': None,
+    'id': <ANY>,
+    'labels': set({
+    }),
+    'name': None,
+    'object_id_base': 'Remote control',
+    'options': dict({
+    }),
+    'original_device_class': None,
+    'original_icon': None,
+    'original_name': 'Remote control',
+    'platform': 'gtw08',
+    'previous_unique_id': None,
+    'suggested_object_id': None,
+    'supported_features': 0,
+    'translation_key': 'remote_control_mode',
+    'unique_id': '2312345678_remote_control_mode',
+    'unit_of_measurement': None,
+  })
+# ---
+# name: test_entities[select.gtw_08_ehc_04_remote_control-state]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'GTW-08 EHC-04 Remote control',
+      <SelectEntityCapabilityAttribute.OPTIONS: 'options'>: list([
+        'temperature_and_power',
+        'power',
+        'temperature',
+        'monitoring_only',
+      ]),
+    }),
+    'context': <ANY>,
+    'entity_id': 'select.gtw_08_ehc_04_remote_control',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'monitoring_only',
+  })
+# ---
+# name: test_entities[select.gtw_08_ehc_04_remote_heat_demand-entry]
+  EntityRegistryEntrySnapshot({
+    'aliases': list([
+      None,
+    ]),
+    'area_id': None,
+    'capabilities': dict({
+      <SelectEntityCapabilityAttribute.OPTIONS: 'options'>: list([
+        'standby',
+        'heating',
+        'cooling',
+      ]),
+    }),
+    'config_entry_id': <ANY>,
+    'config_subentry_id': <ANY>,
+    'device_class': None,
+    'device_id': <ANY>,
+    'disabled_by': None,
+    'domain': 'select',
+    'entity_category': <EntityCategory.CONFIG: 'config'>,
+    'entity_id': 'select.gtw_08_ehc_04_remote_heat_demand',
+    'has_entity_name': True,
+    'hidden_by': None,
+    'icon': None,
+    'id': <ANY>,
+    'labels': set({
+    }),
+    'name': None,
+    'object_id_base': 'Remote heat demand',
+    'options': dict({
+    }),
+    'original_device_class': None,
+    'original_icon': None,
+    'original_name': 'Remote heat demand',
+    'platform': 'gtw08',
+    'previous_unique_id': None,
+    'suggested_object_id': None,
+    'supported_features': 0,
+    'translation_key': 'remote_heat_demand',
+    'unique_id': '2312345678_remote_heat_demand',
+    'unit_of_measurement': None,
+  })
+# ---
+# name: test_entities[select.gtw_08_ehc_04_remote_heat_demand-state]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'GTW-08 EHC-04 Remote heat demand',
+      <SelectEntityCapabilityAttribute.OPTIONS: 'options'>: list([
+        'standby',
+        'heating',
+        'cooling',
+      ]),
+    }),
+    'context': <ANY>,
+    'entity_id': 'select.gtw_08_ehc_04_remote_heat_demand',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'standby',
+  })
+# ---
+# name: test_entities[select.gtw_08_ehc_04_zone_1_operating_mode-entry]
+  EntityRegistryEntrySnapshot({
+    'aliases': list([
+      None,
+    ]),
+    'area_id': None,
+    'capabilities': dict({
+      <SelectEntityCapabilityAttribute.OPTIONS: 'options'>: list([
+        'scheduling',
+        'manual',
+        'off',
+      ]),
+    }),
+    'config_entry_id': <ANY>,
+    'config_subentry_id': <ANY>,
+    'device_class': None,
+    'device_id': <ANY>,
+    'disabled_by': None,
+    'domain': 'select',
+    'entity_category': None,
+    'entity_id': 'select.gtw_08_ehc_04_zone_1_operating_mode',
+    'has_entity_name': True,
+    'hidden_by': None,
+    'icon': None,
+    'id': <ANY>,
+    'labels': set({
+    }),
+    'name': None,
+    'object_id_base': 'Operating mode',
+    'options': dict({
+    }),
+    'original_device_class': None,
+    'original_icon': None,
+    'original_name': 'Operating mode',
+    'platform': 'gtw08',
+    'previous_unique_id': None,
+    'suggested_object_id': None,
+    'supported_features': 0,
+    'translation_key': 'zone_mode_setting',
+    'unique_id': '2312345678_zone_1_mode_setting',
+    'unit_of_measurement': None,
+  })
+# ---
+# name: test_entities[select.gtw_08_ehc_04_zone_1_operating_mode-state]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Zone 1 Operating mode',
+      <SelectEntityCapabilityAttribute.OPTIONS: 'options'>: list([
+        'scheduling',
+        'manual',
+        'off',
+      ]),
+    }),
+    'context': <ANY>,
+    'entity_id': 'select.gtw_08_ehc_04_zone_1_operating_mode',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'scheduling',
+  })
+# ---
+# name: test_entities[select.gtw_08_ehc_04_zone_2_operating_mode-entry]
+  EntityRegistryEntrySnapshot({
+    'aliases': list([
+      None,
+    ]),
+    'area_id': None,
+    'capabilities': dict({
+      <SelectEntityCapabilityAttribute.OPTIONS: 'options'>: list([
+        'scheduling',
+        'manual',
+        'off',
+      ]),
+    }),
+    'config_entry_id': <ANY>,
+    'config_subentry_id': <ANY>,
+    'device_class': None,
+    'device_id': <ANY>,
+    'disabled_by': None,
+    'domain': 'select',
+    'entity_category': None,
+    'entity_id': 'select.gtw_08_ehc_04_zone_2_operating_mode',
+    'has_entity_name': True,
+    'hidden_by': None,
+    'icon': None,
+    'id': <ANY>,
+    'labels': set({
+    }),
+    'name': None,
+    'object_id_base': 'Operating mode',
+    'options': dict({
+    }),
+    'original_device_class': None,
+    'original_icon': None,
+    'original_name': 'Operating mode',
+    'platform': 'gtw08',
+    'previous_unique_id': None,
+    'suggested_object_id': None,
+    'supported_features': 0,
+    'translation_key': 'zone_mode_setting',
+    'unique_id': '2312345678_zone_2_mode_setting',
+    'unit_of_measurement': None,
+  })
+# ---
+# name: test_entities[select.gtw_08_ehc_04_zone_2_operating_mode-state]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Zone 2 Operating mode',
+      <SelectEntityCapabilityAttribute.OPTIONS: 'options'>: list([
+        'scheduling',
+        'manual',
+        'off',
+      ]),
+    }),
+    'context': <ANY>,
+    'entity_id': 'select.gtw_08_ehc_04_zone_2_operating_mode',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'manual',
+  })
+# ---
+# name: test_entities[select.gtw_08_ehc_04_zone_3_operating_mode-entry]
+  EntityRegistryEntrySnapshot({
+    'aliases': list([
+      None,
+    ]),
+    'area_id': None,
+    'capabilities': dict({
+      <SelectEntityCapabilityAttribute.OPTIONS: 'options'>: list([
+        'scheduling',
+        'manual',
+        'off',
+      ]),
+    }),
+    'config_entry_id': <ANY>,
+    'config_subentry_id': <ANY>,
+    'device_class': None,
+    'device_id': <ANY>,
+    'disabled_by': None,
+    'domain': 'select',
+    'entity_category': None,
+    'entity_id': 'select.gtw_08_ehc_04_zone_3_operating_mode',
+    'has_entity_name': True,
+    'hidden_by': None,
+    'icon': None,
+    'id': <ANY>,
+    'labels': set({
+    }),
+    'name': None,
+    'object_id_base': 'Operating mode',
+    'options': dict({
+    }),
+    'original_device_class': None,
+    'original_icon': None,
+    'original_name': 'Operating mode',
+    'platform': 'gtw08',
+    'previous_unique_id': None,
+    'suggested_object_id': None,
+    'supported_features': 0,
+    'translation_key': 'zone_mode_setting',
+    'unique_id': '2312345678_zone_3_mode_setting',
+    'unit_of_measurement': None,
+  })
+# ---
+# name: test_entities[select.gtw_08_ehc_04_zone_3_operating_mode-state]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Zone 3 Operating mode',
+      <SelectEntityCapabilityAttribute.OPTIONS: 'options'>: list([
+        'scheduling',
+        'manual',
+        'off',
+      ]),
+    }),
+    'context': <ANY>,
+    'entity_id': 'select.gtw_08_ehc_04_zone_3_operating_mode',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'off',
+  })
+# ---
