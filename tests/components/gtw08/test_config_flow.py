@@ -189,6 +189,22 @@ async def test_user_flow_no_appliance(
 
 
 @pytest.mark.usefixtures("mock_setup_entry", "mock_temporary_unit")
+async def test_user_flow_gateway_not_ready(
+    hass: HomeAssistant, mock_unit: MockModbusUnit
+) -> None:
+    """Test a gateway without a board count yet shows an error until it has one."""
+    mock_unit.holding[128] = 0xFF
+    flow_id = await _start(hass, TYPE_SERIAL)
+    result = await hass.config_entries.flow.async_configure(flow_id, SERIAL_INPUT)
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": "cannot_connect"}
+
+    mock_unit.holding[128] = 2
+    result = await hass.config_entries.flow.async_configure(flow_id, SERIAL_INPUT)
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+
+
+@pytest.mark.usefixtures("mock_setup_entry", "mock_temporary_unit")
 async def test_user_flow_already_configured(
     hass: HomeAssistant, mock_config_entry: MockConfigEntry
 ) -> None:

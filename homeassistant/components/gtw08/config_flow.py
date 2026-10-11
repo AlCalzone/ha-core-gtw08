@@ -3,7 +3,7 @@
 from collections.abc import Mapping
 from typing import Any, override
 
-from gtw08_modbus import Gtw08Appliance, NoApplianceError
+from gtw08_modbus import Gtw08Appliance, Gtw08Error, NoApplianceError
 from modbus_connection import ModbusError, ModbusSerialParams, ModbusTcpParams
 import probatio
 
@@ -281,7 +281,7 @@ class Gtw08ConfigFlow(ConfigFlow, domain=DOMAIN):
                 appliance = await Gtw08Appliance.async_detect(unit)
         except NoApplianceError:
             return None, {"base": "no_appliance"}, {}
-        except (ModbusError, HomeAssistantError) as err:
+        except (Gtw08Error, ModbusError, HomeAssistantError) as err:
             return None, {"base": "cannot_connect"}, {"error": str(err)}
         return appliance, {}, {}
 

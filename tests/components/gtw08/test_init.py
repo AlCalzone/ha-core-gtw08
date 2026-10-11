@@ -102,6 +102,19 @@ async def test_setup_retries_without_boards(
     assert mock_config_entry.state is ConfigEntryState.SETUP_RETRY
 
 
+async def test_setup_retries_without_a_board_count(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_get_unit: MagicMock,
+    mock_unit: MockModbusUnit,
+) -> None:
+    """Test a gateway that has not read the board count yet puts the entry into retry."""
+    mock_unit.holding[128] = 0xFF
+    mock_config_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    assert mock_config_entry.state is ConfigEntryState.SETUP_RETRY
+
+
 async def test_setup_fails_when_the_link_is_in_use(
     hass: HomeAssistant, mock_config_entry: MockConfigEntry
 ) -> None:

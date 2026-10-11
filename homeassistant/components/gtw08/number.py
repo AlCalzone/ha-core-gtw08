@@ -4,7 +4,8 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import override
 
-from gtw08_modbus import Gtw08Appliance, Gtw08Component
+from gtw08_modbus import Gtw08Appliance
+from modbus_connection.model import Component
 
 from homeassistant.components.number import (
     NumberDeviceClass,
@@ -26,11 +27,11 @@ PARALLEL_UPDATES = 1
 class Gtw08NumberDescription(NumberEntityDescription, Gtw08EntityDescription):
     """Describe a GTW-08 number."""
 
-    target_fn: Callable[[Gtw08Appliance], Gtw08Component]
+    target_fn: Callable[[Gtw08Appliance], Component]
     field: str
 
 
-def _system_control(device: Gtw08Appliance) -> Gtw08Component:
+def _system_control(device: Gtw08Appliance) -> Component:
     """The remote control block, which setup has found by the time this runs."""
     assert device.system_control is not None
     return device.system_control
