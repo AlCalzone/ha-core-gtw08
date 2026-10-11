@@ -40,6 +40,7 @@ from .const import (
     DEFAULT_UNIT_ID,
     DOMAIN,
     PARITIES,
+    RETRY_DELAY,
     TYPE_RTU_OVER_TCP,
     TYPE_SERIAL,
     TYPE_TCP,
@@ -117,11 +118,13 @@ def create_modbus_params(
     """
     if data[CONF_TYPE] == TYPE_TCP:
         return ModbusTcpParams(host=data[CONF_HOST], port=data[CONF_PORT])
-    device = (
-        data[CONF_DEVICE]
-        if data[CONF_TYPE] == TYPE_SERIAL
-        else f"socket://{data[CONF_HOST]}:{data[CONF_PORT]}"
-    )
+    if data[CONF_TYPE] == TYPE_SERIAL:
+        device = data[CONF_DEVICE]
+    else:
+        host = data[CONF_HOST]
+        if ":" in host and not host.startswith("["):
+            host = f"[{host}]"
+        device = f"socket://{host}:{data[CONF_PORT]}"
     return ModbusSerialParams(
         device=device,
         baudrate=data[CONF_BAUDRATE],
@@ -206,12 +209,12 @@ class Gtw08ConfigFlow(ConfigFlow, domain=DOMAIN):
         placeholders: dict[str, str] = {}
         if user_input is not None:
             data = _flatten(connection_type, user_input)
+            self._abort_if_link_configured(data)
             appliance, errors, placeholders = await self._async_validate(data)
             if appliance is not None:
                 if appliance.serial_number is not None:
                     await self.async_set_unique_id(str(appliance.serial_number))
                     self._abort_if_unique_id_configured()
-                self._abort_if_link_configured(data)
                 return self.async_create_entry(title=_title(appliance), data=data)
 
         return self.async_show_form(
@@ -251,7 +254,10 @@ class Gtw08ConfigFlow(ConfigFlow, domain=DOMAIN):
                 if appliance is None or appliance.serial_number is None
                 else str(appliance.serial_number)
             )
-            same_appliance = appliance is not None and probed == entry.unique_id
+            # An entry set up without a serial number has nothing to compare.
+            same_appliance = appliance is not None and (
+                entry.unique_id is None or probed == entry.unique_id
+            )
 
             if relinking and not same_appliance:
                 await self.hass.config_entries.async_setup(entry.entry_id)
@@ -278,11 +284,16 @@ class Gtw08ConfigFlow(ConfigFlow, domain=DOMAIN):
             async with async_get_temporary_unit(
                 self.hass, create_modbus_params(data), data[CONF_UNIT_ID]
             ) as unit:
-                appliance = await Gtw08Appliance.async_detect(unit)
+                appliance = await Gtw08Appliance.async_detect(
+                    unit, retry_delay=RETRY_DELAY
+                )
         except NoApplianceError:
             return None, {"base": "no_appliance"}, {}
         except (Gtw08Error, ModbusError, HomeAssistantError) as err:
             return None, {"base": "cannot_connect"}, {"error": str(err)}
+        # The serial number decides the entry's identity, so wait for it.
+        if "serial_number" in appliance.pending_blocks:
+            return None, {"base": "not_ready"}, {}
         return appliance, {}, {}
 
 

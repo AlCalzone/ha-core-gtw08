@@ -8,6 +8,7 @@ from typing import override
 from gtw08_modbus import (
     ApplianceStatus,
     ApplianceSubStatus,
+    BoardCategory,
     Cascade,
     ErrorType,
     Gtw08Appliance,
@@ -62,11 +63,42 @@ def _cascade(device: Gtw08Appliance) -> Cascade:
     return device.cascade
 
 
+KIND_BURNER = "burner"
+KIND_HEAT_PUMP = "heat_pump"
+
+_KINDS = {
+    BoardCategory.CU_GH: KIND_BURNER,
+    BoardCategory.CU_OH: KIND_BURNER,
+    BoardCategory.EHC: KIND_HEAT_PUMP,
+}
+
+
+def appliance_kinds(device: Gtw08Appliance) -> set[str]:
+    """Whether the appliance has a burner, a heat pump, or both.
+
+    An appliance whose boards say neither gets every sensor.
+    """
+    kinds = set()
+    for board in device.board_list:
+        if board.device_type is None:
+            continue
+        try:
+            category = BoardCategory(board.device_type >> 8)
+        except ValueError:
+            continue
+        if (kind := _KINDS.get(category)) is not None:
+            kinds.add(kind)
+    if device.heat_pump is not None:
+        kinds.add(KIND_HEAT_PUMP)
+    return kinds or {KIND_BURNER, KIND_HEAT_PUMP}
+
+
 @dataclass(frozen=True, kw_only=True)
 class Gtw08SensorDescription(SensorEntityDescription, Gtw08EntityDescription):
     """Describe a GTW-08 sensor."""
 
     value_fn: ValueFn
+    kind: str | None = None  # KIND_BURNER or KIND_HEAT_PUMP for a sensor only one has
 
 
 def _temperature(
@@ -76,6 +108,7 @@ def _temperature(
     *,
     translation_key: str | None = None,
     zone: int | None = None,
+    kind: str | None = None,
 ) -> Gtw08SensorDescription:
     """A temperature sensor, in °C."""
     return Gtw08SensorDescription(
@@ -83,6 +116,7 @@ def _temperature(
         translation_key=translation_key or key,
         component=component,
         zone=zone,
+        kind=kind,
         device_class=SensorDeviceClass.TEMPERATURE,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         state_class=SensorStateClass.MEASUREMENT,
@@ -170,16 +204,19 @@ APPLIANCE_SENSORS: tuple[Gtw08SensorDescription, ...] = (
         "flue_gas_temperature",
         "appliance",
         lambda device: device.appliance.flue_gas_temperature,
+        kind=KIND_BURNER,
     ),
     _temperature(
         "heat_pump_flow_temperature",
         "appliance",
         lambda device: device.appliance.heat_pump_flow_temperature,
+        kind=KIND_HEAT_PUMP,
     ),
     _temperature(
         "heat_pump_return_temperature",
         "appliance",
         lambda device: device.appliance.heat_pump_return_temperature,
+        kind=KIND_HEAT_PUMP,
     ),
     _temperature(
         "dhw_setpoint",
@@ -407,6 +444,14 @@ CASCADE_SENSORS: tuple[Gtw08SensorDescription, ...] = (
 )
 
 
+def _board_error_type(device: Gtw08Appliance, number: int) -> StateType | IntEnum:
+    """The board's error type, ``none`` without an error, unknown if unreachable."""
+    board = device.board_list[number - 1]
+    if not board.is_available:
+        return None
+    return board.error_type or "none"
+
+
 def board_sensors(number: int, model: str | None) -> list[Gtw08SensorDescription]:
     """The error sensors of board ``number``."""
     placeholders = {"number": str(number), "model": model or "?"}
@@ -434,7 +479,7 @@ def board_sensors(number: int, model: str | None) -> list[Gtw08SensorDescription
             device_class=SensorDeviceClass.ENUM,
             options=["none", *_enum_options(ErrorType)],
             entity_category=EntityCategory.DIAGNOSTIC,
-            value_fn=lambda device: device.board_list[number - 1].error_type or "none",
+            value_fn=lambda device: _board_error_type(device, number),
         ),
     ]
 
@@ -515,14 +560,13 @@ async def async_setup_entry(
     runtime_data = entry.runtime_data
     device = runtime_data.device
     served = runtime_data.served_components
+    kinds = appliance_kinds(device)
 
     descriptions = [
         description
         for description in (*APPLIANCE_SENSORS, *CASCADE_SENSORS)
         if description.component in served
-        # An appliance reports no value for what it does not have, such as
-        # the flue gas temperature of a heat pump.
-        and description.value_fn(device) is not None
+        and (description.kind is None or description.kind in kinds)
     ]
     descriptions.extend(
         description

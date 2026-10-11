@@ -5,7 +5,12 @@ from dataclasses import dataclass
 from enum import IntFlag
 from typing import override
 
-from gtw08_modbus import GeneratorStatus, Gtw08Appliance, HydraulicStatus
+from gtw08_modbus import (
+    GeneratorStatus,
+    Gtw08Appliance,
+    HydraulicStatus,
+    RemoteControlMode,
+)
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
@@ -34,6 +39,14 @@ class Gtw08BinarySensorDescription(
 def _has(flags: IntFlag | None, flag: IntFlag) -> bool | None:
     """Whether ``flag`` is set, or ``None`` without a reading."""
     return None if flags is None else flag in flags
+
+
+def _remote_control_active(device: Gtw08Appliance) -> bool | None:
+    """Whether the gateway has taken over the heat demand from the zones."""
+    control = device.system_control
+    if control is None or control.mode is None:
+        return None
+    return control.mode is not RemoteControlMode.MONITORING_ONLY
 
 
 def _generator(
@@ -113,6 +126,12 @@ APPLIANCE_BINARY_SENSORS: tuple[Gtw08BinarySensorDescription, ...] = (
         component="service",
         device_class=BinarySensorDeviceClass.PROBLEM,
         value_fn=lambda device: device.service.service_required,
+    ),
+    Gtw08BinarySensorDescription(
+        key="remote_control",
+        translation_key="remote_control",
+        component="system_control",
+        value_fn=_remote_control_active,
     ),
     Gtw08BinarySensorDescription(
         key="error",

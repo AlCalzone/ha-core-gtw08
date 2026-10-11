@@ -29,6 +29,10 @@ PARITIES: Final[dict[str, Literal["N", "O", "E"]]] = {
     "even": "E",
 }
 
+# How long the library waits before asking again for a value the gateway
+# is still fetching.
+RETRY_DELAY: Final = 2.0
+
 # A poll takes a few seconds at 9600 baud. Heating moves slowly.
 SCAN_INTERVAL: Final = timedelta(seconds=30)
 # Zone settings change from the appliance's own display too.

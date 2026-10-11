@@ -1,24 +1,15 @@
 """Support for GTW-08 selects."""
 
-from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from enum import IntEnum
 from typing import override
 
-from gtw08_modbus import (
-    Gtw08Appliance,
-    RemoteControlMode,
-    RemoteHeatDemand,
-    SystemControl,
-    ZoneMode,
-)
+from gtw08_modbus import ZoneMode
 
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
-from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .coordinator import Gtw08ConfigEntry
+from .coordinator import Gtw08ConfigEntry, Gtw08RuntimeData
 from .entity import Gtw08Entity, Gtw08EntityDescription, zone_of
 
 PARALLEL_UPDATES = 1
@@ -31,102 +22,49 @@ SETTABLE_ZONE_MODES = (ZoneMode.SCHEDULING, ZoneMode.MANUAL, ZoneMode.OFF)
 class Gtw08SelectDescription(SelectEntityDescription, Gtw08EntityDescription):
     """Describe a GTW-08 select."""
 
-    choices: tuple[IntEnum, ...]
-    value_fn: Callable[[Gtw08Appliance], IntEnum | None]
-    write_fn: Callable[[Gtw08Appliance, IntEnum], Awaitable[None]]
-
-    @property
-    def option_names(self) -> list[str]:
-        """The options, as Home Assistant shows them."""
-        return [choice.name.lower() for choice in self.choices]
-
-
-def _system_control(device: Gtw08Appliance) -> SystemControl:
-    """The remote control block, which setup has found by the time this runs."""
-    assert device.system_control is not None
-    return device.system_control
-
-
-SYSTEM_SELECTS: tuple[Gtw08SelectDescription, ...] = (
-    Gtw08SelectDescription(
-        key="remote_control_mode",
-        translation_key="remote_control_mode",
-        component="system_control",
-        entity_category=EntityCategory.CONFIG,
-        entity_registry_enabled_default=False,
-        choices=tuple(RemoteControlMode),
-        value_fn=lambda device: _system_control(device).mode,
-        write_fn=lambda device, value: _system_control(device).write("mode", value),
-    ),
-    Gtw08SelectDescription(
-        key="remote_heat_demand",
-        translation_key="remote_heat_demand",
-        component="system_control",
-        entity_category=EntityCategory.CONFIG,
-        entity_registry_enabled_default=False,
-        choices=tuple(RemoteHeatDemand),
-        value_fn=lambda device: _system_control(device).heat_demand,
-        write_fn=lambda device, value: _system_control(device).write(
-            "heat_demand", value
-        ),
-    ),
-)
-
-
-def zone_select(number: int) -> Gtw08SelectDescription:
-    """The operating mode select of zone ``number``."""
-    return Gtw08SelectDescription(
-        key=f"zone_{number}_mode_setting",
-        translation_key="zone_mode_setting",
-        component="zone_settings",
-        zone=number,
-        choices=SETTABLE_ZONE_MODES,
-        value_fn=lambda device: zone_of(device, number).mode_setting,
-        write_fn=lambda device, value: zone_of(device, number).async_write_mode(
-            ZoneMode(value)
-        ),
-    )
-
 
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: Gtw08ConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Set up the GTW-08 select platform."""
+    """Add an operating mode select for each zone without a climate entity."""
     runtime_data = entry.runtime_data
-    served = runtime_data.served_components
-    descriptions = [
-        description for description in SYSTEM_SELECTS if description.component in served
-    ]
-    descriptions.extend(
-        zone_select(number) for number in runtime_data.device.zone_slots
-    )
     async_add_entities(
-        Gtw08Select(runtime_data, description) for description in descriptions
+        Gtw08ZoneModeSelect(runtime_data, number)
+        for number, zone in runtime_data.device.zone_slots.items()
+        if zone.function is None or not zone.function.is_room_heating
     )
 
 
-class Gtw08Select(Gtw08Entity, SelectEntity):
-    """Defines a GTW-08 select."""
+class Gtw08ZoneModeSelect(Gtw08Entity, SelectEntity):
+    """The operating mode of a zone, such as a hot water tank."""
 
+    _attr_options = [mode.name.lower() for mode in SETTABLE_ZONE_MODES]
     entity_description: Gtw08SelectDescription
 
-    @property
-    @override
-    def options(self) -> list[str]:
-        return self.entity_description.option_names
+    def __init__(self, runtime_data: Gtw08RuntimeData, number: int) -> None:
+        """Initialize the entity."""
+        super().__init__(
+            runtime_data,
+            Gtw08SelectDescription(
+                key=f"zone_{number}_mode_setting",
+                translation_key="zone_mode_setting",
+                component="zone_settings",
+                zone=number,
+            ),
+        )
+        self._number = number
 
     @property
     @override
     def current_option(self) -> str | None:
-        value = self.entity_description.value_fn(self.coordinator.device)
-        if value is None or value not in self.entity_description.choices:
+        mode = zone_of(self.coordinator.device, self._number).mode_setting
+        if mode not in SETTABLE_ZONE_MODES:
             return None
-        return value.name.lower()
+        return mode.name.lower()
 
     @override
     async def async_select_option(self, option: str) -> None:
-        description = self.entity_description
-        choice = description.choices[description.option_names.index(option)]
-        await self._async_write(description.write_fn(self.coordinator.device, choice))
+        zone = zone_of(self.coordinator.device, self._number)
+        await self._async_write(zone.async_write_mode(ZoneMode[option.upper()]))

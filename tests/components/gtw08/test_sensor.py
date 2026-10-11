@@ -49,6 +49,7 @@ async def test_board_error(
     assert hass.states.get(f"{PREFIX}_board_1_ehc_04_error_code").state == "531"
     assert hass.states.get(f"{PREFIX}_board_1_ehc_04_error_type").state == "warning"
     assert hass.states.get(f"{PREFIX}_board_2_scb_04_error_code").state == STATE_UNKNOWN
+    assert hass.states.get(f"{PREFIX}_board_2_scb_04_error_type").state == STATE_UNKNOWN
 
 
 async def test_cascade(

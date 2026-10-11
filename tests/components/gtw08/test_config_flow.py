@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 
 from modbus_connection import (
     GatewayPathUnavailableError,
+    GatewayTargetError,
     ModbusSerialParams,
     ModbusTcpParams,
     ModbusTimeoutError,
@@ -12,7 +13,10 @@ from modbus_connection import (
 from modbus_connection.mock import MockModbusConnection, MockModbusUnit
 import pytest
 
-from homeassistant.components.gtw08.config_flow import SECTION_MORE_OPTIONS
+from homeassistant.components.gtw08.config_flow import (
+    SECTION_MORE_OPTIONS,
+    create_modbus_params,
+)
 from homeassistant.components.gtw08.const import (
     CONF_BAUDRATE,
     CONF_PARITY,
@@ -323,3 +327,68 @@ async def test_reconfigure_cannot_connect(
     )
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "reconfigure_successful"
+
+
+@pytest.mark.usefixtures("mock_setup_entry", "mock_temporary_unit")
+async def test_user_flow_serial_number_still_pending(
+    hass: HomeAssistant, mock_unit: MockModbusUnit
+) -> None:
+    """Test a serial number the gateway is still fetching asks to try again."""
+    mock_unit.fail_read(7228, GatewayTargetError())
+    flow_id = await _start(hass, TYPE_SERIAL)
+    result = await hass.config_entries.flow.async_configure(flow_id, SERIAL_INPUT)
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": "not_ready"}
+
+    mock_unit.fail_read(7228, None)
+    result = await hass.config_entries.flow.async_configure(flow_id, SERIAL_INPUT)
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["result"].unique_id == str(SERIAL_NUMBER)
+
+
+@pytest.mark.usefixtures("mock_setup_entry")
+async def test_user_flow_same_link_aborts_before_probing(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_temporary_unit: MagicMock,
+) -> None:
+    """Test a link already in use aborts without touching the bus."""
+    mock_config_entry.add_to_hass(hass)
+    flow_id = await _start(hass, TYPE_SERIAL)
+    result = await hass.config_entries.flow.async_configure(
+        flow_id, {**SERIAL_INPUT, CONF_BAUDRATE: "19200"}
+    )
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "already_configured"
+    mock_temporary_unit.assert_not_called()
+
+
+@pytest.mark.usefixtures("mock_setup_entry", "mock_temporary_unit")
+async def test_reconfigure_an_entry_without_a_serial_number(
+    hass: HomeAssistant,
+) -> None:
+    """Test an entry set up without a serial number can be reconfigured."""
+    entry = MockConfigEntry(domain=DOMAIN, data=MOCK_ENTRY_DATA, title=MOCK_TITLE)
+    entry.add_to_hass(hass)
+    result = await entry.start_reconfigure_flow(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {**SERIAL_INPUT, CONF_DEVICE: "/dev/ttyUSB1"}
+    )
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data[CONF_DEVICE] == "/dev/ttyUSB1"
+    assert entry.unique_id is None
+
+
+def test_rtu_over_tcp_to_an_ipv6_host() -> None:
+    """Test an IPv6 converter address gets brackets in the socket URL."""
+    params = create_modbus_params(
+        {
+            CONF_TYPE: TYPE_RTU_OVER_TCP,
+            CONF_HOST: "fd00::60",
+            CONF_PORT: 8899,
+            CONF_BAUDRATE: 9600,
+            CONF_PARITY: "none",
+        }
+    )
+    assert params == ModbusSerialParams(device="socket://[fd00::60]:8899")

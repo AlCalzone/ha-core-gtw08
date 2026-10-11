@@ -36,6 +36,12 @@
         "state": {
           "on": "mdi:pump"
         }
+      },
+      "remote_control": {
+        "default": "mdi:remote-off",
+        "state": {
+          "on": "mdi:remote"
+        }
       }
     },
     "number": {
@@ -44,18 +50,9 @@
       },
       "heating_curve_gradient": {
         "default": "mdi:chart-bell-curve-cumulative"
-      },
-      "remote_power": {
-        "default": "mdi:gauge"
       }
     },
     "select": {
-      "remote_control_mode": {
-        "default": "mdi:remote"
-      },
-      "remote_heat_demand": {
-        "default": "mdi:heat-wave"
-      },
       "zone_mode_setting": {
         "default": "mdi:calendar-clock"
       }
@@ -118,6 +115,14 @@
       "zone_pump_starts": {
         "default": "mdi:counter"
       }
+    }
+  },
+  "services": {
+    "request_heat_demand": {
+      "service": "mdi:remote"
+    },
+    "stop_remote_control": {
+      "service": "mdi:remote-off"
     }
   }
 }

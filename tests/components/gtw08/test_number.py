@@ -57,20 +57,6 @@ async def test_entities(
             4500,
             id="fixed_flow",
         ),
-        pytest.param(
-            "number.gtw_08_ehc_04_remote_power_request",
-            60,
-            256,
-            60,
-            id="remote_power",
-        ),
-        pytest.param(
-            "number.gtw_08_ehc_04_remote_temperature_request",
-            55,
-            257,
-            5500,
-            id="remote_temperature",
-        ),
     ],
 )
 @pytest.mark.usefixtures("entity_registry_enabled_by_default", "init_integration")

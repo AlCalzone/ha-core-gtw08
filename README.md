@@ -16,8 +16,9 @@ docs/gtw08.markdown               the page for home-assistant.io
 - Two coordinators: readings every 30 seconds, and the zone and remote control settings every minute.
 - Sensors for temperatures, water pressure, status, power, COP, energy counters, service state, board errors and the cascade. Sensors the appliance has no value for are not created.
 - Binary sensors for what runs and for problems such as low water pressure.
-- A child device per zone. Room heating zones get a climate entity. Every zone gets an operating mode select, and every zone that is not a hot water zone gets heating curve numbers.
-- Disabled-by-default entities for the gateway's remote control of the heat demand.
+- A child device per zone. Room heating zones get a climate entity, other zones an operating mode select. Every zone that is not a hot water zone gets heating curve numbers.
+- Two admin-only actions for the gateway's remote control of the heat demand, and a binary sensor that shows when it is on. The actions go through the library's `async_request()` and `async_stop()`, which write the registers in order and roll back on failure.
+- A reload when a block or zone the gateway was still fetching at startup answers, so its entities appear.
 - Diagnostics with the raw register dump. The serial number registers, the host and the serial port are left out.
 
 It takes its Modbus unit from core's `modbus` integration with `async_get_unit`, so it shares the serial port or converter with any other integration on the same bus.
@@ -48,7 +49,7 @@ CI does the same against core's `dev` branch on every push and once a week.
 
 ## Before submitting
 
-- Publish `gtw08-modbus` 0.1.0 to PyPI. The manifest pins it.
+- Publish `gtw08-modbus` 0.1.0 to PyPI. The manifest pins it. `dependency-transparency` stays `todo` until then.
 - Add the brand to [home-assistant/brands](https://github.com/home-assistant/brands). Until then hassfest fails the `brands` rule of the Bronze tier, which every new integration has to reach. Remeha, Brötje, De Dietrich and Baxi could each become a virtual integration that points to `gtw08`.
 - Open the documentation pull request on home-assistant.io with `docs/gtw08.markdown`.
 - Test against a real gateway. The register map comes from the manufacturer's configuration manual 7854678, version 01 of 15 September 2023, and has only been tested against the mock.

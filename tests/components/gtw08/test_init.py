@@ -6,13 +6,18 @@ from freezegun.api import FrozenDateTimeFactory
 from modbus_connection import (
     GatewayPathUnavailableError,
     GatewayTargetError,
+    IllegalDataAddressError,
     ModbusTimeoutError,
 )
 from modbus_connection.mock import MockModbusUnit
 import pytest
 from syrupy.assertion import SnapshotAssertion
 
-from homeassistant.components.gtw08.const import DOMAIN, SCAN_INTERVAL
+from homeassistant.components.gtw08.const import (
+    DOMAIN,
+    SCAN_INTERVAL,
+    SETTINGS_SCAN_INTERVAL,
+)
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import STATE_UNAVAILABLE, Platform
 from homeassistant.core import HomeAssistant
@@ -253,3 +258,75 @@ async def test_reload_when_a_pending_block_answers(
 
     assert mock_config_entry.state is ConfigEntryState.LOADED
     assert hass.states.get(cop).state == "4.21"
+
+
+async def test_appliance_sensors_survive_a_failed_first_poll(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_get_unit: MagicMock,
+    mock_unit: MockModbusUnit,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """Test a component that fails the first poll still gets its entities."""
+    flow = "sensor.gtw_08_ehc_04_flow_temperature"
+    mock_unit.fail_read(400, GatewayTargetError())
+    mock_config_entry.add_to_hass(hass)
+    with patch("homeassistant.components.gtw08.PLATFORMS", [Platform.SENSOR]):
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+    assert hass.states.get(flow).state == STATE_UNAVAILABLE
+    assert hass.states.get("sensor.gtw_08_ehc_04_flue_gas_temperature") is None
+
+    mock_unit.fail_read(400, None)
+    freezer.tick(SCAN_INTERVAL)
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+
+    assert hass.states.get(flow).state == "35.12"
+
+
+async def test_no_reload_when_a_pending_block_turns_out_absent(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_get_unit: MagicMock,
+    mock_unit: MockModbusUnit,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """Test a pending block the appliance lacks after all causes no reload."""
+    mock_unit.fail_read(9230, GatewayTargetError())
+    mock_config_entry.add_to_hass(hass)
+    with patch("homeassistant.components.gtw08.PLATFORMS", [Platform.SENSOR]):
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+    mock_unit.fail_read(9230, IllegalDataAddressError())
+    with patch.object(hass.config_entries, "async_schedule_reload") as reload:
+        freezer.tick(SCAN_INTERVAL)
+        async_fire_time_changed(hass)
+        await hass.async_block_till_done()
+
+    assert not mock_config_entry.runtime_data.device.pending_blocks
+    reload.assert_not_called()
+
+
+@pytest.mark.parametrize("platforms", [[Platform.BINARY_SENSOR, Platform.SELECT]])
+async def test_a_settings_failure_takes_only_settings_entities(
+    hass: HomeAssistant,
+    init_integration: MockConfigEntry,
+    mock_unit: MockModbusUnit,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """Test a failing remote control block leaves the readings available."""
+    mock_unit.fail_read(256, GatewayTargetError())
+    freezer.tick(SETTINGS_SCAN_INTERVAL)
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+
+    assert (
+        hass.states.get("binary_sensor.gtw_08_ehc_04_remote_control").state
+        == STATE_UNAVAILABLE
+    )
+    assert (
+        hass.states.get("select.gtw_08_ehc_04_zone_2_operating_mode").state == "manual"
+    )
+    assert hass.states.get("binary_sensor.gtw_08_ehc_04_heat_pump").state == "on"

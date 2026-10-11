@@ -28,8 +28,6 @@ jobs:
           path: core
           persist-credentials: false
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
-      - name: Copy the integration into core
-        run: integration/script/install-into-core.sh core
       - name: Install core and the test dependencies
         working-directory: core
         run: |
@@ -37,9 +35,13 @@ jobs:
           pin() { grep -ihE "^$1==" requirements_all.txt homeassistant/package_constraints.txt | head -1; }
           uv pip install --python .venv/bin/python -e . -r requirements_test.txt -r requirements_test_pre_commit.txt \
             "$(pin 'modbus-connection\[tmodbus\]')" "$(pin tmodbus)" "$(pin pymodbus)" \
-            "$(pin paho-mqtt)" "$(pin aiohasupervisor)" \
+            "$(pin paho-mqtt)" "$(pin aiohasupervisor)" "$(pin infrared-protocols)" \
             "$(pin aiousbwatcher)" "$(pin serialx)" \
             "gtw08-modbus @ git+https://github.com/AlCalzone/gtw08-modbus@main"
+      # After the venv exists, so the script also opts the integration into
+      # strict typing in mypy.ini.
+      - name: Copy the integration into core
+        run: integration/script/install-into-core.sh core
       - name: Generate translations
         working-directory: core
         run: .venv/bin/python -m script.translations develop --all
@@ -54,3 +56,18 @@ jobs:
         run: |
           .venv/bin/ruff check homeassistant/components/gtw08 tests/components/gtw08
           .venv/bin/ruff format --check homeassistant/components/gtw08 tests/components/gtw08
+      # Mypy also reports on components whose requirements this venv lacks.
+      # Only the integration's own errors fail the job.
+      - name: Mypy
+        working-directory: core
+        run: |
+          .venv/bin/mypy homeassistant/components/gtw08 > mypy.log || true
+          cat mypy.log
+          ! grep '^homeassistant/components/gtw08' mypy.log
+      # The quality_scale plugin fails until the brands entry exists.
+      - name: Hassfest
+        working-directory: core
+        run: >
+          PATH="$PWD/.venv/bin:$PATH" .venv/bin/python -m script.hassfest
+          --integration-path homeassistant/components/gtw08
+          -p config_flow,config_schema,icons,manifest,services,translations

@@ -1,0 +1,48 @@
+request_heat_demand:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: gtw08
+    mode:
+      required: true
+      selector:
+        select:
+          translation_key: remote_control_mode
+          options:
+            - power
+            - temperature
+            - temperature_and_power
+    heat_demand:
+      required: true
+      selector:
+        select:
+          translation_key: remote_heat_demand
+          options:
+            - standby
+            - heating
+            - cooling
+    power:
+      selector:
+        number:
+          min: 0
+          max: 100
+          unit_of_measurement: "%"
+          mode: box
+    temperature:
+      selector:
+        number:
+          min: 0
+          max: 90
+          step: 0.5
+          unit_of_measurement: "°C"
+          mode: box
+
+stop_remote_control:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: gtw08

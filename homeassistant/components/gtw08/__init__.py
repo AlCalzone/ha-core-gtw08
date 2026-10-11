@@ -9,10 +9,17 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryError, HomeAssistantError
-from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import config_validation as cv, device_registry as dr
+from homeassistant.helpers.typing import ConfigType
 
 from .config_flow import create_modbus_params
-from .const import CONF_UNIT_ID, DOMAIN, SCAN_INTERVAL, SETTINGS_SCAN_INTERVAL
+from .const import (
+    CONF_UNIT_ID,
+    DOMAIN,
+    RETRY_DELAY,
+    SCAN_INTERVAL,
+    SETTINGS_SCAN_INTERVAL,
+)
 from .coordinator import (
     Gtw08ConfigEntry,
     Gtw08DataUpdateCoordinator,
@@ -20,6 +27,7 @@ from .coordinator import (
     device_identifier,
 )
 from .entity import zone_identifier
+from .services import async_setup_services
 
 PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
@@ -28,6 +36,14 @@ PLATFORMS: list[Platform] = [
     Platform.SELECT,
     Platform.SENSOR,
 ]
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Set up the GTW-08 actions."""
+    async_setup_services(hass)
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: Gtw08ConfigEntry) -> bool:
@@ -42,7 +58,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: Gtw08ConfigEntry) -> boo
             translation_key="link_settings_in_use",
             translation_placeholders={"error": str(err)},
         ) from err
-    device = Gtw08Appliance(unit)
+    device = Gtw08Appliance(unit, retry_delay=RETRY_DELAY)
 
     readings = Gtw08DataUpdateCoordinator(
         hass, entry, device, device.async_update_readings, SCAN_INTERVAL
@@ -61,18 +77,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: Gtw08ConfigEntry) -> boo
     )
     entry.runtime_data = Gtw08RuntimeData(readings, settings, appliance.id)
 
+    # Entities are created from what the appliance serves now. A block or
+    # zone the library finds later needs a reload to get its entities.
+    served = entry.runtime_data.served_components
+    zones = set(device.zone_slots)
+
+    @callback
+    def _async_reload_when_grown() -> None:
+        if not (
+            entry.runtime_data.served_components <= served
+            and set(device.zone_slots) <= zones
+        ):
+            hass.config_entries.async_schedule_reload(entry.entry_id)
+
+    if device.pending_blocks:
+        entry.async_on_unload(readings.async_add_listener(_async_reload_when_grown))
+
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-
-    # Entities are created from what setup found, so a block that answers
-    # later needs a reload to get its entities.
-    if pending := set(device.pending_blocks):
-
-        @callback
-        def _async_reload_when_found() -> None:
-            if not pending.issubset(device.pending_blocks):
-                hass.config_entries.async_schedule_reload(entry.entry_id)
-
-        entry.async_on_unload(readings.async_add_listener(_async_reload_when_found))
     return True
 
 

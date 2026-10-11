@@ -1,17 +1,15 @@
 rules:
   # Bronze
-  action-setup:
-    status: exempt
-    comment: This integration does not register any actions.
+  action-setup: done
   appropriate-polling: done
   brands: todo
   common-modules: done
   config-flow-test-coverage: done
   config-flow: done
-  dependency-transparency: done
-  docs-actions:
-    status: exempt
-    comment: This integration does not register any actions.
+  dependency-transparency:
+    status: todo
+    comment: gtw08-modbus is not released on PyPI yet.
+  docs-actions: done
   docs-conditions:
     status: exempt
     comment: This integration does not provide any conditions.
@@ -63,9 +61,7 @@ rules:
   docs-supported-functions: done
   docs-troubleshooting: done
   docs-use-cases: done
-  dynamic-devices:
-    status: exempt
-    comment: Zones are found when the entry loads. The appliance reports no change to its zones at runtime.
+  dynamic-devices: done
   entity-category: done
   entity-device-class: done
   entity-disabled-by-default: done

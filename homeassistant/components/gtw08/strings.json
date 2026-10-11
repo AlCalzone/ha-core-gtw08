@@ -6,7 +6,8 @@
     },
     "error": {
       "cannot_connect": "Failed to connect: {error}",
-      "no_appliance": "The gateway answered, but reports no appliance behind it. Check the L-Bus wiring between the gateway and the appliance."
+      "no_appliance": "The gateway answered, but reports no appliance behind it. Check the L-Bus wiring between the gateway and the appliance.",
+      "not_ready": "The gateway is still reading the appliance's serial number. Try again in a minute."
     },
     "step": {
       "reconfigure": {
@@ -156,6 +157,9 @@
       "pump": {
         "name": "Pump"
       },
+      "remote_control": {
+        "name": "Remote control"
+      },
       "reset_needed": {
         "name": "Reset needed"
       },
@@ -175,32 +179,9 @@
       },
       "heating_curve_gradient": {
         "name": "Heating curve gradient"
-      },
-      "remote_power": {
-        "name": "Remote power request"
-      },
-      "remote_temperature": {
-        "name": "Remote temperature request"
       }
     },
     "select": {
-      "remote_control_mode": {
-        "name": "Remote control",
-        "state": {
-          "monitoring_only": "Monitoring only",
-          "power": "Power",
-          "temperature": "Temperature",
-          "temperature_and_power": "Temperature and power"
-        }
-      },
-      "remote_heat_demand": {
-        "name": "Remote heat demand",
-        "state": {
-          "cooling": "Cooling",
-          "heating": "Heating",
-          "standby": "Standby"
-        }
-      },
       "zone_mode_setting": {
         "name": "Operating mode",
         "state": {
@@ -551,6 +532,9 @@
     }
   },
   "exceptions": {
+    "gateway_not_ready": {
+      "message": "The gateway has not read the appliance's boards yet."
+    },
     "invalid_value": {
       "message": "The appliance does not accept this value: {error}"
     },
@@ -566,6 +550,9 @@
     "no_component_answered": {
       "message": "The gateway answered none of the requests of this poll."
     },
+    "remote_control_unsupported": {
+      "message": "{title} does not support remote control of the heat demand."
+    },
     "write_failed": {
       "message": "Writing to the appliance failed: {error}"
     }
@@ -577,6 +564,58 @@
         "none": "None",
         "odd": "Odd"
       }
+    },
+    "remote_control_mode": {
+      "options": {
+        "power": "Power",
+        "temperature": "Temperature",
+        "temperature_and_power": "Temperature and power"
+      }
+    },
+    "remote_heat_demand": {
+      "options": {
+        "cooling": "Cooling",
+        "heating": "Heating",
+        "standby": "Standby"
+      }
+    }
+  },
+  "services": {
+    "request_heat_demand": {
+      "description": "Takes over the heat demand from the zones. The appliance ignores its zones until remote control stops.",
+      "fields": {
+        "config_entry_id": {
+          "description": "The GTW-08 gateway to control.",
+          "name": "Gateway"
+        },
+        "heat_demand": {
+          "description": "Heat, cool, or stand by. Standby switches the system off and needs no power or temperature.",
+          "name": "Heat demand"
+        },
+        "mode": {
+          "description": "What to request: a power, a flow temperature, or both.",
+          "name": "Mode"
+        },
+        "power": {
+          "description": "The requested power, from the system's minimum (0 %) to its maximum (100 %). Needed for the power modes.",
+          "name": "Power"
+        },
+        "temperature": {
+          "description": "The requested flow temperature. Needed for the temperature modes.",
+          "name": "Temperature"
+        }
+      },
+      "name": "Request heat demand"
+    },
+    "stop_remote_control": {
+      "description": "Hands the heat demand back to the zones.",
+      "fields": {
+        "config_entry_id": {
+          "description": "The GTW-08 gateway to hand back.",
+          "name": "Gateway"
+        }
+      },
+      "name": "Stop remote control"
     }
   }
 }

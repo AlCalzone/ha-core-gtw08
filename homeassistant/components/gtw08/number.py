@@ -13,7 +13,7 @@ from homeassistant.components.number import (
     NumberEntityDescription,
     NumberMode,
 )
-from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfTemperature
+from homeassistant.const import EntityCategory, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
@@ -29,45 +29,6 @@ class Gtw08NumberDescription(NumberEntityDescription, Gtw08EntityDescription):
 
     target_fn: Callable[[Gtw08Appliance], Component]
     field: str
-
-
-def _system_control(device: Gtw08Appliance) -> Component:
-    """The remote control block, which setup has found by the time this runs."""
-    assert device.system_control is not None
-    return device.system_control
-
-
-SYSTEM_NUMBERS: tuple[Gtw08NumberDescription, ...] = (
-    Gtw08NumberDescription(
-        key="remote_power",
-        translation_key="remote_power",
-        component="system_control",
-        entity_category=EntityCategory.CONFIG,
-        entity_registry_enabled_default=False,
-        native_min_value=0,
-        native_max_value=100,
-        native_step=1,
-        native_unit_of_measurement=PERCENTAGE,
-        mode=NumberMode.BOX,
-        target_fn=_system_control,
-        field="power",
-    ),
-    Gtw08NumberDescription(
-        key="remote_temperature",
-        translation_key="remote_temperature",
-        component="system_control",
-        entity_category=EntityCategory.CONFIG,
-        entity_registry_enabled_default=False,
-        device_class=NumberDeviceClass.TEMPERATURE,
-        native_min_value=0,
-        native_max_value=90,
-        native_step=0.5,
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        mode=NumberMode.BOX,
-        target_fn=_system_control,
-        field="temperature",
-    ),
-)
 
 
 def zone_numbers(number: int) -> list[Gtw08NumberDescription]:
@@ -127,18 +88,11 @@ async def async_setup_entry(
 ) -> None:
     """Set up the GTW-08 number platform."""
     runtime_data = entry.runtime_data
-    served = runtime_data.served_components
-    descriptions = [
-        description for description in SYSTEM_NUMBERS if description.component in served
-    ]
-    descriptions.extend(
-        description
+    async_add_entities(
+        Gtw08Number(runtime_data, description)
         for number, zone in runtime_data.device.zone_slots.items()
         if zone.function is not None and not zone.function.is_dhw
         for description in zone_numbers(number)
-    )
-    async_add_entities(
-        Gtw08Number(runtime_data, description) for description in descriptions
     )
 
 

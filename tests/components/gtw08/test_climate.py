@@ -16,6 +16,7 @@ from homeassistant.components.climate import (
     SERVICE_SET_TEMPERATURE,
     SERVICE_TURN_OFF,
     SERVICE_TURN_ON,
+    HVACAction,
     HVACMode,
 )
 from homeassistant.components.gtw08.const import SCAN_INTERVAL
@@ -144,3 +145,65 @@ async def test_invalid_value(hass: HomeAssistant) -> None:
             blocking=True,
         )
     assert err.value.translation_key == "invalid_value"
+
+
+@pytest.mark.parametrize(
+    ("hvac_mode", "expected"),
+    [
+        pytest.param(HVACMode.OFF, 2, id="off"),
+        pytest.param(HVACMode.AUTO, 0, id="auto"),
+        pytest.param(HVACMode.HEAT, 1, id="heat"),
+    ],
+)
+@pytest.mark.usefixtures("init_integration")
+async def test_set_temperature_with_a_mode(
+    hass: HomeAssistant,
+    mock_unit: MockModbusUnit,
+    hvac_mode: HVACMode,
+    expected: int,
+) -> None:
+    """Test a mode passed with the temperature is the mode written."""
+    mock_unit.holding[649] = 1
+    await hass.services.async_call(
+        CLIMATE_DOMAIN,
+        SERVICE_SET_TEMPERATURE,
+        {ATTR_ENTITY_ID: ZONE_1, ATTR_TEMPERATURE: 18, ATTR_HVAC_MODE: hvac_mode},
+        blocking=True,
+    )
+    assert mock_unit.holding[664] == 180
+    assert mock_unit.holding[649] == expected
+
+
+@pytest.mark.usefixtures("init_integration")
+async def test_cooling_action(
+    hass: HomeAssistant,
+    mock_unit: MockModbusUnit,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """Test a running zone pump shows cooling while the appliance cools."""
+    assert hass.states.get(ZONE_1).attributes["hvac_action"] == HVACAction.HEATING
+
+    mock_unit.holding[280] = 0b1000001  # pump on, cooling active
+    freezer.tick(SCAN_INTERVAL)
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+
+    assert hass.states.get(ZONE_1).attributes["hvac_action"] == HVACAction.COOLING
+
+
+@pytest.mark.usefixtures("init_integration")
+async def test_a_mode_write_refreshes_the_settings_too(
+    hass: HomeAssistant, mock_unit: MockModbusUnit
+) -> None:
+    """Test a climate write also refreshes the zone settings coordinator."""
+    mock_unit.read_events.clear()
+    await hass.services.async_call(
+        CLIMATE_DOMAIN,
+        SERVICE_SET_HVAC_MODE,
+        {ATTR_ENTITY_ID: ZONE_1, ATTR_HVAC_MODE: HVACMode.OFF},
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+
+    starts = {event.address for event in mock_unit.read_events}
+    assert {648, 1107} <= starts

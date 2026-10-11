@@ -3,9 +3,10 @@
 from dataclasses import dataclass
 from typing import Any, override
 
-from gtw08_modbus import Zone, ZoneMode
+from gtw08_modbus import HydraulicStatus, Zone, ZoneMode
 
 from homeassistant.components.climate import (
+    ATTR_HVAC_MODE,
     ClimateEntity,
     ClimateEntityDescription,
     ClimateEntityFeature,
@@ -113,7 +114,12 @@ class Gtw08Climate(Gtw08Entity, ClimateEntity):
             return HVACAction.OFF
         if zone.pump_running is None:
             return None
-        return HVACAction.HEATING if zone.pump_running else HVACAction.IDLE
+        if not zone.pump_running:
+            return HVACAction.IDLE
+        hydraulics = self.coordinator.device.system_status.hydraulic_status
+        if hydraulics is not None and HydraulicStatus.COOLING_ACTIVE in hydraulics:
+            return HVACAction.COOLING
+        return HVACAction.HEATING
 
     @property
     @override
@@ -126,12 +132,18 @@ class Gtw08Climate(Gtw08Entity, ClimateEntity):
 
     @override
     async def async_set_temperature(self, **kwargs: Any) -> None:
-        """Hold the temperature, switching a scheduled zone to manual."""
+        """Set the manual temperature and the mode passed along with it.
+
+        Without a mode, a scheduled zone switches to manual so it holds the
+        new temperature.
+        """
         zone = self._zone
         await self._async_write(
             zone.async_write_room_setpoint(kwargs[ATTR_TEMPERATURE])
         )
-        if zone.mode is not ZoneMode.MANUAL:
+        if (hvac_mode := kwargs.get(ATTR_HVAC_MODE)) is not None:
+            await self._async_write(zone.async_write_mode(ZONE_MODES[hvac_mode]))
+        elif zone.mode is not ZoneMode.MANUAL:
             await self._async_write(zone.async_write_mode(ZoneMode.MANUAL))
 
     @override

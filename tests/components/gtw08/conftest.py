@@ -29,9 +29,12 @@ def mock_setup_entry() -> Generator[AsyncMock]:
 
 
 @pytest.fixture(autouse=True)
-def no_detect_delay() -> Generator[None]:
-    """Retry detection without waiting."""
-    with patch("gtw08_modbus.device.DETECT_RETRY_DELAY", 0):
+def no_retry_delay() -> Generator[None]:
+    """Let the library ask again without waiting."""
+    with (
+        patch("homeassistant.components.gtw08.RETRY_DELAY", 0),
+        patch("homeassistant.components.gtw08.config_flow.RETRY_DELAY", 0),
+    ):
         yield
 
 

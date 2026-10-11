@@ -6,7 +6,13 @@ from datetime import timedelta
 import logging
 from typing import override
 
-from gtw08_modbus import Gtw08Appliance, Gtw08Error, NoApplianceError, UpdateReport
+from gtw08_modbus import (
+    GatewayNotReadyError,
+    Gtw08Appliance,
+    Gtw08Error,
+    NoApplianceError,
+    UpdateReport,
+)
 from modbus_connection import ModbusError
 from propcache.api import cached_property
 
@@ -67,6 +73,11 @@ class Gtw08DataUpdateCoordinator(DataUpdateCoordinator[UpdateReport]):
             raise UpdateFailed(
                 translation_domain=DOMAIN,
                 translation_key="no_appliance",
+            ) from err
+        except GatewayNotReadyError as err:
+            raise UpdateFailed(
+                translation_domain=DOMAIN,
+                translation_key="gateway_not_ready",
             ) from err
         except (Gtw08Error, ModbusError) as err:
             raise UpdateFailed(

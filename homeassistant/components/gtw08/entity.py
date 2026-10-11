@@ -50,6 +50,7 @@ class Gtw08Entity(CoordinatorEntity[Gtw08DataUpdateCoordinator]):
         self.entity_description = entity_description
         base = device_identifier(self.coordinator.config_entry)
         self._attr_unique_id = f"{base}_{entity_description.key}"
+        self._runtime_data = runtime_data
         self._attr_device_info = self._device_info(runtime_data, base)
 
     def _device_info(
@@ -90,3 +91,12 @@ class Gtw08Entity(CoordinatorEntity[Gtw08DataUpdateCoordinator]):
                 translation_placeholders={"error": str(err) or type(err).__name__},
             ) from err
         await self.coordinator.async_request_refresh()
+        if self.entity_description.zone is not None:
+            # Zone readings and settings show the same mode, from two
+            # coordinators.
+            for coordinator in (
+                self._runtime_data.readings,
+                self._runtime_data.settings,
+            ):
+                if coordinator is not self.coordinator:
+                    await coordinator.async_request_refresh()
