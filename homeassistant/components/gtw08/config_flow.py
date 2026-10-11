@@ -112,8 +112,8 @@ def create_modbus_params(
 ) -> ModbusSerialParams | ModbusTcpParams:
     """Build the Modbus link parameters from config entry data.
 
-    A transparent RS-485 to Ethernet converter passes RTU frames through, so
-    it is a serial port reached over a socket.
+    A transparent RS-485 to Ethernet converter passes RTU frames through.
+    That makes it a serial port reached over a socket.
     """
     if data[CONF_TYPE] == TYPE_TCP:
         return ModbusTcpParams(host=data[CONF_HOST], port=data[CONF_PORT])

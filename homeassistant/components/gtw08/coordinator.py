@@ -99,8 +99,8 @@ class Gtw08DataUpdateCoordinator(DataUpdateCoordinator[UpdateReport]):
 def device_identifier(entry: ConfigEntry) -> str:
     """The identifier everything in this entry derives from.
 
-    That is the serial number where the appliance reports one, and the entry
-    ID otherwise.
+    It is the serial number where the appliance reports one. Otherwise it is
+    the entry ID.
     """
     return entry.unique_id or entry.entry_id
 
