@@ -58,7 +58,7 @@ async def test_cascade(
     mock_unit: MockModbusUnit,
 ) -> None:
     """Test a cascade with producers gets its sensors."""
-    mock_unit.holding.update({7101: 6010, 7102: 3, 7151: [0, 245], 7159: 3, 7163: 5020})
+    mock_unit.holding.update({7101: 6010, 7102: 3, 7151: [0, 245], 7159: 3, 7164: 5020})
     mock_config_entry.add_to_hass(hass)
     with patch("homeassistant.components.gtw08.PLATFORMS", [Platform.SENSOR]):
         await hass.config_entries.async_setup(mock_config_entry.entry_id)

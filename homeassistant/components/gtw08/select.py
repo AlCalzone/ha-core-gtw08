@@ -78,7 +78,7 @@ def zone_select(number: int) -> Gtw08SelectDescription:
     return Gtw08SelectDescription(
         key=f"zone_{number}_mode_setting",
         translation_key="zone_mode_setting",
-        component="zones",
+        component="zone_settings",
         zone=number,
         choices=SETTABLE_ZONE_MODES,
         value_fn=lambda device: zone_of(device, number).mode_setting,

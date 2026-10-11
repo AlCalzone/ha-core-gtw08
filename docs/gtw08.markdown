@@ -193,7 +193,7 @@ actions:
 
 ## Data updates
 
-The integration polls the appliance every 30 seconds, and the remote control settings every 5 minutes. At 9600 baud, one poll takes a few seconds.
+The integration polls the appliance's measurements every 30 seconds, and the zone and remote control settings every minute. At 9600 baud, one poll takes a few seconds. The boards and zones are read once, when the integration loads. Reload it after adding a zone.
 
 If one block of registers fails to read, only the entities from that block become unavailable.
 

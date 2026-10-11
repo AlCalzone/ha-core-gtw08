@@ -13,7 +13,7 @@ docs/gtw08.markdown               the page for home-assistant.io
 ## What it does
 
 - A config flow with three link types: an RS-485 adapter, an RS-485 to Ethernet converter speaking Modbus TCP, and a transparent converter carrying RTU over TCP. Baud rate, parity and unit ID default to the gateway's factory settings: 9600 baud, no parity, unit 100.
-- Two coordinators: readings every 30 seconds, remote control settings every 5 minutes.
+- Two coordinators: readings every 30 seconds, and the zone and remote control settings every minute.
 - Sensors for temperatures, water pressure, status, power, COP, energy counters, service state, board errors and the cascade. Sensors the appliance has no value for are not created.
 - Binary sensors for what runs and for problems such as low water pressure.
 - A child device per zone. Room heating zones get a climate entity. Every zone gets an operating mode select, and every zone that is not a hot water zone gets heating curve numbers.

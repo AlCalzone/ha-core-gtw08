@@ -31,4 +31,5 @@ PARITIES: Final[dict[str, Literal["N", "O", "E"]]] = {
 
 # A poll takes a few seconds at 9600 baud. Heating moves slowly.
 SCAN_INTERVAL: Final = timedelta(seconds=30)
-SETTINGS_SCAN_INTERVAL: Final = timedelta(minutes=5)
+# Zone settings change from the appliance's own display too.
+SETTINGS_SCAN_INTERVAL: Final = timedelta(minutes=1)
