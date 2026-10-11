@@ -7,7 +7,7 @@ from gtw08_modbus import Gtw08Appliance
 from homeassistant.components.modbus import async_get_unit
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryError, HomeAssistantError
 from homeassistant.helpers import device_registry as dr
 
@@ -62,6 +62,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: Gtw08ConfigEntry) -> boo
     entry.runtime_data = Gtw08RuntimeData(readings, settings, appliance.id)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    # Entities are created from what setup found, so a block that answers
+    # later needs a reload to get its entities.
+    if pending := set(device.pending_blocks):
+
+        @callback
+        def _async_reload_when_found() -> None:
+            if not pending.issubset(device.pending_blocks):
+                hass.config_entries.async_schedule_reload(entry.entry_id)
+
+        entry.async_on_unload(readings.async_add_listener(_async_reload_when_found))
     return True
 
 

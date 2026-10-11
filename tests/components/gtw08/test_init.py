@@ -228,3 +228,28 @@ async def test_entry_without_serial_number(
     )
     assert device is not None
     assert device.serial_number is None
+
+
+async def test_reload_when_a_pending_block_answers(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_get_unit: MagicMock,
+    mock_unit: MockModbusUnit,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """Test a block the gateway was still fetching gets its entities later."""
+    cop = "sensor.gtw_08_ehc_04_coefficient_of_performance"
+    mock_unit.fail_read(9230, GatewayTargetError())
+    mock_config_entry.add_to_hass(hass)
+    with patch("homeassistant.components.gtw08.PLATFORMS", [Platform.SENSOR]):
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+        assert hass.states.get(cop) is None
+
+        mock_unit.fail_read(9230, None)
+        freezer.tick(SCAN_INTERVAL)
+        async_fire_time_changed(hass)
+        await hass.async_block_till_done(wait_background_tasks=True)
+
+    assert mock_config_entry.state is ConfigEntryState.LOADED
+    assert hass.states.get(cop).state == "4.21"

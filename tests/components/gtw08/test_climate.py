@@ -1,6 +1,9 @@
 """Tests for the GTW-08 climate platform."""
 
+from unittest.mock import patch
+
 from freezegun.api import FrozenDateTimeFactory
+from gtw08_modbus import InvalidValueError
 from modbus_connection import ModbusTimeoutError
 from modbus_connection.mock import MockModbusUnit
 import pytest
@@ -18,7 +21,7 @@ from homeassistant.components.climate import (
 from homeassistant.components.gtw08.const import SCAN_INTERVAL
 from homeassistant.const import ATTR_ENTITY_ID, ATTR_TEMPERATURE, Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 
 from tests.common import MockConfigEntry, async_fire_time_changed, snapshot_platform
@@ -122,3 +125,22 @@ async def test_write_failure(hass: HomeAssistant, mock_unit: MockModbusUnit) -> 
             blocking=True,
         )
     assert err.value.translation_key == "write_failed"
+
+
+@pytest.mark.usefixtures("init_integration")
+async def test_invalid_value(hass: HomeAssistant) -> None:
+    """Test a value the library refuses raises a translated validation error."""
+    with (
+        patch(
+            "homeassistant.components.gtw08.climate.Zone.async_write_mode",
+            side_effect=InvalidValueError("no"),
+        ),
+        pytest.raises(ServiceValidationError) as err,
+    ):
+        await hass.services.async_call(
+            CLIMATE_DOMAIN,
+            SERVICE_SET_HVAC_MODE,
+            {ATTR_ENTITY_ID: ZONE_1, ATTR_HVAC_MODE: HVACMode.OFF},
+            blocking=True,
+        )
+    assert err.value.translation_key == "invalid_value"

@@ -551,6 +551,9 @@
     }
   },
   "exceptions": {
+    "invalid_value": {
+      "message": "The appliance does not accept this value: {error}"
+    },
     "link_settings_in_use": {
       "message": "The gateway is already in use with different link settings: {error}"
     },

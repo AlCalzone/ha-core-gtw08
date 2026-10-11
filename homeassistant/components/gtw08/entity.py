@@ -4,10 +4,10 @@ from collections.abc import Awaitable
 from dataclasses import dataclass
 from typing import override
 
-from gtw08_modbus import Gtw08Appliance, Zone
+from gtw08_modbus import Gtw08Appliance, InvalidValueError, Zone
 from modbus_connection import ModbusError
 
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.entity import EntityDescription
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -77,6 +77,12 @@ class Gtw08Entity(CoordinatorEntity[Gtw08DataUpdateCoordinator]):
         """Run a write on the appliance, then refresh what it changed."""
         try:
             await write
+        except InvalidValueError as err:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="invalid_value",
+                translation_placeholders={"error": str(err)},
+            ) from err
         except ModbusError as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
